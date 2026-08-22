@@ -1,24 +1,58 @@
 # Custos implementation contract
 
-Custos is a fail-closed gateway for asset-truth attestations. Keep dependencies one-way: `gateway` may use `attest`, `claims`, and `oracle`; `attest` may use models/config only; `claims` and `oracle` do not import gateway.
+Keep dependencies one-way. `custos_protocol` is the SDK and imports nothing from the
+application: not `gateway`, not `claims`, not `oracle`. Within it, `errors`, `crypto` and
+`canonical` are leaves; `models` depends only on leaves; feature modules depend on `models`;
+`verification` is the only module that composes everything. There is no dependency on the
+AIP SDK — `ARCHITECTURE1.md` is a blueprint, not a library.
+
+`custos_protocol` performs no I/O. Configuration arrives as value objects (`DriftConfig`);
+the environment is read only in `gateway/config.py`.
+
+These rules are enforced by `tests/test_architecture.py`, not by convention.
 
 ## Fixed data contracts
 
-- `Intent`: `envelope_version="custos/1"`, non-empty `agent_id`, action of `borrow_against|trade|redeem`, positive USD amount, UTC `issued_at` and `expires_at`, optional downstream URL.
-- `Claim`: asset identifier, Treasury tenor, claimed NAV/backing/tokens/yield, and last-attested timestamp.
+- `CustosEnvelope`: `@context="https://custos.protocol/v1"`, `@type="CustosEnvelope"`,
+  `protocol_version="1.0.0"`, an `AgentIdentity`, a `Principal`, an `Intent`, the agent's
+  `Boundaries`, a `nonce:<32 hex>` entropy value, aware-UTC `issued_at` and a **required**
+  `expires_at`, and a detached Ed25519 `Proof`.
+- `Claim`: asset identifier, issuer, Treasury tenor, asset class, claimed NAV/backing/tokens/yield,
+  and last-attested timestamp.
 - `Observation`: source, tenor, observed yield in integer bps, record date, fetch time, cache flag.
-- ALLOW responses are signed Ed25519 attestations; BLOCK responses use the `CUSTOS-Exxx` taxonomy.
+- Both verdicts are signed. ALLOW returns an `Attestation`, BLOCK returns a `Denial`; both carry
+  a `proof` and both use the `CUSTOS-Exxx` taxonomy.
 
 ## Evaluation contract
 
-`evaluate(intent: Intent, claim: Claim | None, obs: Observation | None) -> Scores | BlockResponse`
+`verify_intent(envelope, public_key, *, claim, observation, ...) -> VerificationResult`
 
-It must evaluate in this order: unknown asset E200; unavailable oracle E300; stale observation E301; stale claim E101; yield drift E201; backing ratio E202. The gateway performs envelope E100/E102/E103 checks beforehand. Never fail open.
+Step order is API surface, not an implementation detail:
+version, schema, expiry, clock skew, **signature**, nonce format, replay, boundaries,
+revocation — then, at Tier 1+, asset truth and attestation. Signature precedes replay so an
+unauthenticated caller cannot burn another agent's nonce. Never fail open.
+
+Asset truth short-circuits in this order: E303 unknown asset, E500 no observation,
+E501 observation too old, E305 future-dated claim, E300 stale claim, E501 negative yield,
+E301 drift, E302 backing.
+
+`passed` is the single authority on the outcome — there is no `valid` field. `checks` is a
+three-valued map (`passed` / `failed` / `not_run`) so a skipped check is representable
+without lying about it.
 
 ## Error codes
 
-`E100` malformed envelope; `E101` claim stale; `E102` intent expired; `E103` clock skew; `E200` unknown asset; `E201` yield drift; `E202` insufficient backing; `E203` unsupported tenor; `E300` oracle unavailable; `E301` stale oracle data; `E400` downstream unavailable.
+Thirty codes in five families, defined in `custos_protocol/errors.py`:
+`E1xx` envelope/protocol, `E2xx` boundary, `E3xx` asset truth, `E4xx` revocation/delegation/trust,
+`E5xx` infrastructure. Do not invent new ones. Every implemented code is exercised by a test;
+`E203`, `E306`, `E403` and `E404` are documented as unreachable until Phase 2.
 
 ## Signing contract
 
-Canonicalize the JSON object excluding `signature` and `public_key`, with sorted keys, compact separators, ASCII encoding. Sign the resulting UTF-8 bytes with Ed25519. Keep `demo/verify_attestation.py` independent of application modules.
+Canonicalize with `custos_protocol/canonical.py`: exclude `proof`, collapse whole floats to
+ints, sort keys recursively, no whitespace, UTF-8 bytes, ISO-8601 `Z` datetimes, emit nulls,
+preserve array order. Sign the resulting bytes with Ed25519; encode keys and signatures as
+base64url. Verify against a **pinned** key fetched out of band from `GET /v1/pubkey` — the
+`public_key` embedded in a record authenticates nothing. Keep `demo/verify_attestation.py`
+independent of application modules; it is the second implementation that proves the canonical
+form is portable.

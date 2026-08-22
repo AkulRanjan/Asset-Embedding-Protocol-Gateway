@@ -31,7 +31,7 @@
 15. [The Demo Surface](#15-the-demo-surface)
 16. [The Test Suite](#16-the-test-suite)
 17. [Measured Performance](#17-measured-performance)
-18. [The Live Oracle Path Is Broken (verified)](#18-the-live-oracle-path-is-broken-verified)
+18. [The Live Oracle Path Was Broken (fixed 2026-08-22)](#18-the-live-oracle-path-was-broken-fixed-2026-08-22)
 19. [Spec ↔ Implementation Divergences](#19-spec--implementation-divergences)
 20. [Security Model & Threat Analysis](#20-security-model--threat-analysis)
 21. [Evolution (git history)](#21-evolution-git-history)
@@ -94,8 +94,10 @@ error-path sweep      → all 11 CUSTOS-Exxx codes reachable, each mapped to the
 POST /v1/intent       → 0.68 ms median end-to-end (ASGI, warm oracle), 500 iterations
 ```
 
-**The one thing that does not work.** The live Treasury oracle **never returns an observation**,
-for two independent, separately verified reasons (§18):
+**The one thing that did not work — fixed 2026-08-22.** The live Treasury oracle **never
+returned an observation**, for two independent, separately verified reasons (§18). Both are now
+fixed; the gateway reaches the live curve and issues a signed ALLOW in default configuration.
+The diagnosis is kept below because it is the reason the fix looks the way it does:
 
 1. `TREASURY_YIELD_URL` (`oracle/treasury.py:16`) points at `.../interest-rates/yield.xml`,
    which serves a legacy `QR_BC_CM` document containing **no `<entry>` elements**.
@@ -105,11 +107,17 @@ for two independent, separately verified reasons (§18):
 2. Both feeds respond in **~8–10 s** from this host against a **3 s** timeout with one retry,
    so the client abandons the fetch after ~7 s of wall time regardless of which URL it uses.
 
-The consequence is that in its default configuration Custos fails closed on *every* request with
-`CUSTOS-E300`. The fail-closed behaviour is exactly right; the availability is zero. Every demo
-that produces an ALLOW does so by substituting the oracle (`demo/run_local_demo.py`,
-`tests/test_gateway.py`). This is the highest-priority finding in the repository, and the fix for
-cause 1 is a single line.
+The consequence was that in its default configuration Custos failed closed on *every* request.
+The fail-closed behaviour was exactly right; the availability was zero. This was the
+highest-priority finding in the repository.
+
+**Both causes are fixed** (§18). `oracle/treasury.py` now builds the OData URL for the current
+year, falls back to the previous year when that feed is still empty, and defaults to a 15 s
+timeout — matched by `gateway.config.ORACLE_TIMEOUT_SECONDS`, which is the value the server
+actually runs with. Measured after the fix: `1M 380 · 3M 388 · 6M 395 · 1Y 403 · 2Y 424` bps,
+`record_date 2026-08-21`, and a `POST /v1/intent` ALLOW whose signature verifies against the
+published key. `demo/run_local_demo.py` still substitutes the oracle, but now by choice — so a
+presentation is deterministic — rather than by necessity.
 
 **Maturity assessment.** The scoring engine, canonical serialization, Ed25519 signing chain, error
 taxonomy and fail-closed discipline are real, tested, and honest about their limits. The module
@@ -1391,11 +1399,54 @@ Network, measured separately against the live feed (§18):
   cache-miss path, and §18's failure of it, the whole performance story.
 
 ---
-## 18. The Live Oracle Path Is Broken (verified)
+## 18. The Live Oracle Path Was Broken (fixed 2026-08-22)
 
-This section is separated from §22 because it is not one finding among many. In its default
-configuration, **Custos cannot produce an ALLOW.** Every request fails closed with `CUSTOS-E300`.
-Two independent causes, each individually sufficient, each verified by execution.
+> **RESOLVED 2026-08-22.** Both causes below are fixed, in `oracle/treasury.py` and
+> `gateway/config.py`. In default configuration the gateway now reaches the live par yield
+> curve and issues a signed ALLOW. Verified by execution on 2026-08-22:
+>
+> ```
+> TreasuryOracle() with production defaults, no substitution:
+>     1M 380 · 3M 388 · 6M 395 · 1Y 403 · 2Y 424 bps
+>     record_date 2026-08-21 (latest business day), cache_hit False
+>     cold-fetch latency across 10 calls: 8.2 / 8.6 / 9.1 / 9.1 / 9.5 / 10.1 / 10.1 / 11.6 s
+>     -- the 15 s default leaves ~3.4 s over the worst observed. Tune with
+>     CUSTOS_ORACLE_TIMEOUT if a deployment sees slower responses.
+>
+> GET  /v1/health  → 200  oracle_reachable: true, observed_yield_bps: 388,
+>                         record_date 2026-08-21, source home.treasury.gov
+> POST /v1/intent  → 200  ALLOW — signature verifies against the published gateway key
+>                  → 403  CUSTOS-E300 / E301 / E302 for the stale, drifted and
+>                         under-backed claims, against the real curve
+> ```
+>
+> What changed, and nothing else:
+>
+> | Change | Where |
+> |---|---|
+> | `TREASURY_YIELD_URL` (legacy `QR_BC_CM`) replaced by `TREASURY_XML_BASE` + `yield_curve_url(year)` on the OData endpoint | `oracle/treasury.py` |
+> | Year computed per request, with a previous-year fallback for the 1 January gap | `oracle/treasury.py:_candidate_urls` |
+> | Default timeout 3.0 s → 15.0 s, in the class and in the config the server actually uses | `oracle/treasury.py`, `gateway/config.py` |
+> | Seven tests, all hermetic (`httpx.MockTransport`, no network in CI) | `tests/test_oracle.py`, `tests/test_gateway.py` |
+>
+> **`parse_yield_curve` was not touched.** §18.2 below suggested the date parser needed
+> repair too; that turned out to be a property of the legacy document only. Pointed at the
+> OData feed the existing parser returns correct values for every mapped tenor on the first
+> attempt, so fixing `_parse_date` would have been treating a symptom of the wrong URL.
+>
+> One cause was found that §18 did not predict: Treasury's year feed answers **HTTP 200 with
+> zero entries** until the year's first business day closes — measured against
+> `field_tdr_date_value=2027` on 2026-08-22, which returned 673 bytes and no `<entry>`. A
+> bare current-year URL would therefore have failed closed every 1 January. Hence the
+> previous-year fallback, which costs a second request only when the first yields nothing.
+>
+> The diagnosis is kept below as the record of what was wrong and how it was proven.
+> §18.5 marks which remedies landed and which remain open.
+
+This section is separated from §22 because it was not one finding among many. In its default
+configuration, **Custos could not produce an ALLOW.** Every request failed closed with
+`CUSTOS-E300` (`CUSTOS-E500` in the Phase 1 taxonomy). Two independent causes, each
+individually sufficient, each verified by execution.
 
 ### 18.1 Symptom
 
@@ -1500,13 +1551,22 @@ fetch at all.
 It was specified, its purpose was correctly predicted, and it was never written. That single row of
 the testing table is the difference between a working product and a permanently-failing one.
 
-### 18.5 Recommended fix, in order
+### 18.5 Recommended fix, in order — status 2026-08-22
 
-1. **Repoint `TREASURY_YIELD_URL`** at the OData feed (verified above to parse). One line.
-2. **Raise the timeout** to ~15 s, or split connect and read budgets. One line.
-3. **Add the specified live test**, marked so it can be skipped offline:
-   `assert 100 <= observation.observed_yield_bps <= 900`. Roughly ten lines, and it would have
-   caught both causes.
+1. **DONE — Repoint `TREASURY_YIELD_URL`** at the OData feed. Landed as `TREASURY_XML_BASE`
+   plus `yield_curve_url(year)`, because the endpoint needs a year parameter and that year
+   has to be computed rather than frozen into a constant.
+2. **DONE — Raise the timeout** to 15 s, in `TreasuryOracle` *and* in
+   `gateway.config.ORACLE_TIMEOUT_SECONDS`. The second one is the one the server actually
+   runs with; fixing only the class default would have left the bug in place. Both are now
+   covered by a test that fails below 12 s.
+3. **DONE, differently — Add the specified live test.** A network test in the suite would be
+   flaky and slow (8-10 s per call), so the seven new tests are hermetic: they pin the URL
+   shape, the current-year-then-previous-year order, the fallback behaviour on an empty feed,
+   the single-request happy path, and both timeout defaults. The live-shape check was instead
+   run by hand and its output recorded in the resolution box above. What would have caught
+   the original bug is the URL-shape assertion, which is now permanent:
+   `assert "sites/default/files" not in url`.
 4. **Log the reason for every `None`** in the oracle — HTTP status, timeout, or parse failure.
    Today all three are silent and indistinguishable, which is why diagnosing this required probing
    the feed by hand.
@@ -1525,7 +1585,7 @@ pre-build specification), `AGENTS.md` (the implementation contract), `README.md`
 
 | # | Topic | Docs say | Code does | Impact |
 |---|---|---|---|---|
-| 1 | **Oracle source** | Fiscal Data JSON API is primary; `home.treasury.gov` XML is the "fallback source" (§8.1) | Only the XML fallback, pointed at a URL whose shape the parser cannot read | **Fatal** — §18 |
+| 1 | **Oracle source** | Fiscal Data JSON API is primary; `home.treasury.gov` XML is the "fallback source" (§8.1) | Only the XML source, now pointed at the OData endpoint the parser was written for | ~~Fatal~~ **Resolved 2026-08-22** for correctness (§18). Still a single point of failure: the documented primary JSON source is not wired, so there is one path to the number, not two |
 | 2 | **Live-feed test** | §14 lists "live oracle fetch returns a plausible bps value (300–600)" as a required test | Not written | The gap that hid #1 |
 | 3 | `FAIL_MODE` | §13: `closed \| open`, "deliberate and documented" | Declared in `config.py:19`, **read by nothing** | A knob that silently does nothing |
 | 4 | Tenor mapping | §8.3 maps to CMT series names (`1 Mo`, `3 Mo`) | Maps to XML field names (`BC_1MONTH`) | Consistent with the fallback source; the spec table describes the API that was not built |
@@ -1676,7 +1736,7 @@ the check that produced it.
 
 | # | Finding | Evidence | Fix |
 |---|---|---|---|
-| 1 | **The live oracle never returns an observation.** `TREASURY_YIELD_URL` serves a legacy `QR_BC_CM` document with no `<entry>` elements, which `parse_yield_curve` cannot read; independently, the feed takes 8–10 s against a 3 s timeout with one retry. Default configuration returns `CUSTOS-E300` to **every** request | §18: `get_observation("3M")` → `None` after 7,017 ms; `has <entry>: False`; parser returns `(2026-08-20, 3.87)` against the OData feed on the first try | Repoint the URL constant at the OData feed (one line); raise the timeout to ~15 s (one line); add the live-shape test the spec already specified |
+| 1 | ~~**The live oracle never returns an observation.**~~ **FIXED 2026-08-22.** `TREASURY_YIELD_URL` served a legacy `QR_BC_CM` document with no `<entry>` elements, which `parse_yield_curve` could not read; independently, the feed takes 8–10 s against a 3 s timeout with one retry. Default configuration returned an oracle-unavailable code to **every** request | §18: `get_observation("3M")` → `None` after 7,017 ms; `has <entry>: False`. **After the fix:** all five tenors return live values dated 2026-08-21; `/v1/health` reports `oracle_reachable: true`; `POST /v1/intent` returns a signed ALLOW that verifies | Done: OData URL with a computed year and previous-year fallback; timeout raised to 15 s in `TreasuryOracle` *and* `gateway/config.py`; seven hermetic tests in `tests/test_oracle.py` + one in `tests/test_gateway.py`. Still open: structured logging for the reason behind every `None` (§18.5 item 4) and a second independent source (item 5) |
 | 2 | **`POST /v1/demo/sync` is an unauthenticated state-mutation endpoint** on the production app, listed in the public OpenAPI schema. Anyone who can reach the port can rewrite every claim the gateway evaluates | `gateway/server.py:134`; no auth on any route; only `/demo` uses `include_in_schema=False` | Mount it on a router included only when an explicit `CUSTOS_DEMO_MODE` env flag is set |
 | 3 | **The reference verifier accepts forged attestations.** `verify()` trusts the `public_key` embedded in the payload, so an attacker can re-sign arbitrary content with their own key | Verified: forged `amount="999999.00"` + attacker key + attacker signature → `verify()` accepts | Take a pinned key parameter; document that consumers must fetch the key from `/v1/pubkey` out-of-band and compare it. Requires #4 to be meaningful |
 | 4 | **Keys are ephemeral by default**, so every attestation becomes unverifiable after a restart and no relying party can pin a stable identity | `attest/signing.py:26` — `Ed25519PrivateKey.generate()` when `CUSTOS_PRIVATE_KEY` is unset | Persist a key for any non-demo deployment; support an encrypted PEM (`password=` is hard-coded `None`) and check file mode on load |
