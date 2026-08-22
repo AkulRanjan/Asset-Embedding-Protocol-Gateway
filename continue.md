@@ -1,8 +1,21 @@
 # Continue here — Custos Gateway session handoff
 
-**Written:** 2026-08-21
-**Repo:** `C:\Users\asus\AIP-Gateway` · branch `main` · 6 commits, **nothing from this session is committed**
-**Read this first, then `docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md`.**
+**Written:** 2026-08-22 (updated later the same day — oracle P0 fixed)
+**Repo:** `C:\Users\asus\AIP-Gateway` · branch **`main`, the only branch** · **Phase 1 + the oracle fix are built and green, and uncommitted**
+**Read this first, then `docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md` §"Deferred to Phase 2".**
+
+
+### Git state — read before running any git command
+
+The user drives git themselves; do not commit or push.
+
+| Ref | Holds |
+|---|---|
+| `main` @ `f56f285` | HEAD. The working tree carries Phase 1 **and** the oracle fix, all uncommitted |
+| tag `phase-1-backup` @ `3cecd94` | Phase 1 as a commit. It was committed on `phase-1-protocol-core`, which the user asked to delete; the tag is what keeps that commit reachable. **Delete the tag only after Phase 1 is committed on `main`** |
+| `stash@{0}` | The oracle fix. Redundant with the working tree, kept as a second copy until `main` has a commit |
+
+Once `main` carries a commit with this work: `git tag -d phase-1-backup` and `git stash drop`.
 
 ---
 
@@ -10,261 +23,174 @@
 
 Custos is a **pre-transaction asset-truth gateway** for autonomous agents holding tokenized
 U.S. Treasury claims. Before an agent borrows against, trades, or redeems a position, it sends
-an intent to Custos. Custos cross-checks the asset's asserted **Claim** against a live
-**Observation** of the Treasury par yield curve and returns either a cryptographically signed
-ALLOW attestation or a structured BLOCK carrying a `CUSTOS-Exxx` code.
-
-Three signals, short-circuiting in a fixed order so the returned code names the most
-fundamental problem:
-
-```
-staleness_hours = (now − claim.last_attested_at) / 3600          > 24h  → claim is unmaintained
-yield_drift     = |observed_bps − claimed_bps| / observed_bps    > 2%   → claim is recent but WRONG
-backing_ratio   = claimed_backing_usd / (tokens × nav_per_token) < 1.0  → claim is internally inconsistent
-```
+a signed intent envelope to Custos. Custos cross-checks the asset's asserted **Claim** against a
+live **Observation** of the Treasury par yield curve and returns either a cryptographically
+signed ALLOW attestation or a signed BLOCK denial carrying a `CUSTOS-Exxx` code.
 
 It is **not** an audit of a fund's private books — issuer NAV feeds are not public. It checks
 whether a claimed yield is plausible **against the live market for its tenor**. Keep that
-precision in any external description; it is the difference between a defensible claim and an
-indefensible one.
+precision in any external description.
 
 ---
 
-## 2. What happened this session
+## 2. State right now
 
-Three documents were produced. No code was written. No commits were made.
-
-| Artifact | Lines | What it is |
-|---|---|---|
-| `ARCHITECTURE.md` | 1,845 | Full technical audit of Custos **as it exists today**, verified by execution |
-| `docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md` | 659 | Approved design for rebuilding Custos in AIP's architectural image |
-| `docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md` | 4,814 | Phase 1 implementation plan — 15 tasks, 86 TDD steps, full code in every step |
-
-The user approved the spec and the plan. **The next action is executing Phase 1.**
-
----
-
-## 3. The goal, precisely
-
-`architecture1.md` in the repo root is the **AIP (Agent Intent Protocol) documentation** — a
-16-layer pre-execution authorization protocol SDK. It is byte-identical to `../aip/ARCHITECTURE.md`.
-
-The user's directive, verbatim:
-
-> *"I want the architecture to be same, do not use the AIP thing, custos is rebuilt in aip's
-> image without any linkage or dependency on each other."*
-
-So: **mirror AIP's architecture, do not import AIP.**
-
-### Hard constraint — read this twice
-
-The real AIP SDK (`aip-protocol` v0.4.0) exists in `../aip/`. **Do not import it, vendor it,
-link to it, or add it as a dependency.** It is a blueprint, not a library. `tests/test_architecture.py`
-(Task 15) enforces this programmatically. If you find yourself typing `import aip_protocol`,
-you have misread the task.
-
-### Layer mapping (spec §4.1)
-
-| AIP layer | Custos module |
-|---|---|
-| Data Models | `custos_protocol/models.py` |
-| Cryptography | `custos_protocol/crypto.py` |
-| Canonical Serialization | `custos_protocol/canonical.py` |
-| Agent Passport | `custos_protocol/passport.py` |
-| Intent Envelope | `custos_protocol/envelope.py` |
-| Verification Pipeline | `custos_protocol/verification.py` |
-| Boundary Enforcement | `custos_protocol/boundaries.py` |
-| **Intent Drift → Asset Truth** | **`custos_protocol/drift.py`** ← Custos's actual value slots in here |
-| Attestation | `custos_protocol/attestation.py` |
-| Delegation Chain | `custos_protocol/delegation.py` *(Phase 2)* |
-| Revocation Store | `custos_protocol/revocation.py` |
-| Trust Score | `custos_protocol/trust.py` *(Phase 2)* |
-| Error Taxonomy | `custos_protocol/errors.py` |
-| Shield / Observe / CLI | *(Phase 3)* |
-
-`gateway/` becomes a thin FastAPI adapter. `claims/` and `oracle/` survive untouched behind
-their existing `Claim | None` and `Observation | None` interfaces.
-
----
-
-## 4. Phase plan (approach A — phased, each phase ends green)
-
-- **Phase 1 — protocol core.** `errors`, `crypto`, `canonical`, `models`, `passport`,
-  `envelope`, `boundaries`, `drift`, `attestation`, `revocation`, `verification` (steps 1–9,
-  Tier 0/1), gateway rebuilt, tests and demos rewritten, `pyproject.toml`. **← YOU ARE HERE**
-- **Phase 2 — trust layer.** `trust`, `delegation`, boundary predicate 4 (`E203` per-day),
-  verification steps 10–11, Tier 2, `/v1/revocations` and `/v1/trust` routes.
-- **Phase 3 — DX surfaces.** `shield`, `observe`, `cli`, `conformance/` vectors + runner.
-
-`revocation.py` is in **Phase 1**, not Phase 2, because replay and revocation checks run at
-every tier including Tier 0 — a Phase 1 gateway without them would ship two permanent holes.
-
----
-
-## 5. How to resume
+**Phase 1 is fully implemented.** All 15 plan tasks executed, all exit criteria verified by
+execution.
 
 ```bash
 cd C:\Users\asus\AIP-Gateway
-python -m pytest -q          # baseline: 12 passed  (bare `pytest` FAILS — Task 1 fixes that)
+git checkout phase-1-protocol-core
+pytest -q                      # 223 passed, 1 skipped (the skip is POSIX file modes on Windows)
+python demo/run_local_demo.py  # four deterministic rows, all green
 ```
 
-Read `docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md`, then execute it with one of:
+Exit criteria, each checked by running it:
 
-- **`superpowers:subagent-driven-development`** (recommended) — fresh subagent per task,
-  review between tasks
-- **`superpowers:executing-plans`** — inline batch execution with checkpoints
+| Criterion | Status |
+|---|---|
+| bare `pytest` green | 223 passed, 1 skipped |
+| `POST /v1/intent` returns a signed `Attestation` on success | HTTP 200, signature verifies |
+| ...and a signed `Denial` on failure | HTTP 403, signature verifies |
+| replay of a spent nonce → `CUSTOS-E102` | HTTP 409 |
+| a forged envelope does not burn the victim's nonce | forged 401 → genuine 200 |
+| a revoked agent is blocked at Tier 0 | HTTP 403 `CUSTOS-E400` |
+| demo shows four outcomes + independent signature check | E300 / E301 / E302 / ALLOW |
+| `tests/test_architecture.py` passes | 46 tests |
+| `models/`, `attest/`, `gateway/validation.py`, `config.py` gone | confirmed absent |
+| no `aip_protocol` import anywhere | grep clean |
 
-Tasks 1→12 build the SDK bottom-up; **the gateway does not come alive until Task 13.** Expect
-the repo to be in a non-runnable intermediate state between Tasks 2 and 13. That is by design —
-the test suite for each layer is green throughout.
+**Nothing is committed.** The user chose "branch, no commits" — deletions are staged via
+`git rm`, new files are untracked. Review with `git status` / `git diff`, then commit however
+you like. Do not commit without being asked.
 
 ---
 
-## 6. Do NOT re-derive these — already verified by execution
+## 3. What was built
 
-Re-running this analysis costs time and tokens. It is all in `ARCHITECTURE.md` with evidence.
+`custos_protocol/` — a standalone SDK, no dependency on `gateway/`, none on the AIP SDK:
+
+| Module | Contents |
+|---|---|
+| `errors.py` | 30-code taxonomy in five families + HTTP mapping + `CustosError` |
+| `crypto.py` | Ed25519, HMAC-SHA256, base64url, PEM I/O with optional passphrase |
+| `canonical.py` | The 8-rule byte-stable signable payload — the interop core |
+| `models.py` | Every wire + domain model; JSON-LD `CustosEnvelope` |
+| `passport.py` | `AgentPassport` — DID identity, keys, policy cage, persistence |
+| `envelope.py` | Construction, signing, hashing, risk-relative tier selection |
+| `boundaries.py` | Predicates 1,2,3,5,6,7 — violations accumulate |
+| `drift.py` | Asset-truth engine: staleness, yield drift, backing ratio |
+| `attestation.py` | Signed `Attestation` **and** `Denial`, `verify_record` |
+| `revocation.py` | Kill switch + FIFO nonce cache, fails closed on stale data |
+| `verification.py` | `verify_intent()` — the only composer |
+
+`gateway/` is now a thin adapter (`config.py`, `keys.py`, `server.py`, `proxy.py`).
+`claims/` and `oracle/` kept their interfaces; `oracle/` was decoupled from the old global
+`config` module and now takes `timeout_seconds` / `cache_ttl_seconds` as constructor args.
+
+---
+
+## 4. Three deliberate deviations from the plan
+
+Each was a defect in the plan, verified by execution, not a shortcut:
+
+1. **`tomllib` → `tomli` fallback** (`tests/test_packaging.py`). `tomllib` is stdlib only on
+   3.11+; the declared floor and the actual interpreter are 3.10.11. Imports `tomllib` with a
+   `tomli` fallback; `tomli` is declared in the `dev` extra.
+2. **`test_expiry_allows_a_small_clock_skew_grace`** built the envelope near-expired and signed
+   it *after*, instead of mutating `expires_at` on an already-signed envelope. The plan's
+   version invalidated its own signature, so it failed at step 4 and never reached the step 3
+   grace window it meant to test.
+3. **Four error codes are exempt from the coverage invariant, not one.** The plan exempted only
+   `E203`. `E306` (attestation step is a stub), `E403` (delegation) and `E404` (trust) are
+   equally unreachable in Phase 1. `UNREACHABLE_IN_PHASE_1` documents each, and a new test —
+   `test_the_deferred_code_list_does_not_hide_a_live_code` — asserts no exempted code is
+   actually emitted by protocol source, so the list cannot be used to excuse a live code.
+
+---
+
+## 5. Decisions the user made this session
+
+- **Git:** branch, no commits.
+- **`demo/live.html`:** accepted the downgrade. The "Evaluate intent" button is now
+  "Inspect asset" calling `GET /v1/assets/{id}`. A browser cannot hold a signing key safely and
+  every envelope must be signed. The signed flow lives in `demo/run_local_demo.py` and
+  `demo/run_demo.py`.
+
+---
+
+## 6. What is next
+
+**Phase 2 — trust layer.** `trust.py`, `delegation.py`, boundary predicate 4 (`E203` rolling
+per-day limit), verification steps 10–11, Tier 2 execution, and the `/v1/revocations` and
+`/v1/trust` routes. When each lands, remove its code from `UNREACHABLE_IN_PHASE_1` in
+`tests/test_architecture.py` — that list is the Phase 2 to-do list.
+
+**Phase 3 — DX surfaces.** `shield`, `observe`, `cli`, `conformance/` vectors + runner.
+
+**The oracle P0 is DONE** (2026-08-22, `ARCHITECTURE.md` §18 rewritten to match).
+`oracle/treasury.py` now builds `yield_curve_url(year)` against Treasury's OData endpoint for the
+current year, falls back to the previous year when that feed is still empty, and defaults to a
+15 s timeout — matched by `gateway.config.ORACLE_TIMEOUT_SECONDS`, which is the value the server
+actually runs with. Verified live: `1M 380 · 3M 388 · 6M 395 · 1Y 403 · 2Y 424` bps,
+`record_date 2026-08-21`; `/v1/health` → `oracle_reachable: true`; `POST /v1/intent` → signed
+ALLOW that verifies against the published key. Eight new tests, all hermetic.
+
+Two things worth carrying forward:
+
+- **`parse_yield_curve` was never broken.** §18 also blamed `_parse_date`; that was a property of
+  the legacy document only. Against the OData feed the untouched parser is correct for every
+  mapped tenor. Do not "fix" it.
+- **The 8–10 s fetch sits in the request path.** The 60 s cache means one request per tenor per
+  minute pays it, but the first caller after a cache miss waits ~9 s. A background refresh would
+  remove that; it was deliberately not done, being a design change rather than a bug fix.
+
+Still open from §18.5, both pre-existing: the oracle returns a bare `None` for HTTP errors,
+timeouts and parse failures alike, so failures are indistinguishable in logs (item 4); and the
+Fiscal Data JSON API that the spec designates as the *primary* source is still not wired, so
+there is one path to the number rather than two (item 5).
+
+---
+
+## 7. Do NOT re-derive these
 
 ### Environment (measured)
 
 ```
 Python 3.10.11 · Windows 11
-pydantic 2.12.5 · fastapi 0.128.0 · cryptography 46.0.4 · httpx 0.28.1
-python -m pytest -q  →  12 passed in 0.31s
-pytest -q            →  3 collection errors (no pyproject.toml; Task 1 fixes it)
+pydantic 2.12.5 · fastapi 0.128.0 · cryptography 46.0.4 · httpx 0.28.1 · tomli 2.4.0
 ```
 
-### Pydantic 2.12 serialization shapes (pinned by byte-exact tests)
+### Pydantic 2.12 serialization shapes (pinned by the byte-exact test in `tests/test_canonical.py`)
 
-- Aware-UTC datetime → `"2026-08-21T12:00:00Z"` (Z suffix; no fractional part when `microsecond == 0`)
+- Aware-UTC datetime → `"2026-08-21T12:00:00Z"` (no fractional part when `microsecond == 0`)
 - `Decimal("50000.00")` → the **string** `"50000.00"` — exactness survives the signature
-- `float 500.0` → stays `500.0` through `json.dumps` — **this is why the whole-float→int rule exists**
+- `float 500.0` → stays `500.0` through `json.dumps` — this is why the whole-float→int rule exists
 - `None` → `null`, emitted not omitted
 - `@context` sorts before all letters (`@` is `U+0040`)
 
-### Measured performance
+### Divergences from the AIP blueprint that are intentional
 
-| Operation | Median |
-|---|---|
-| `evaluate()` full ALLOW path | 0.0064 ms |
-| `sign()` (canonicalize + Ed25519) | 0.0333 ms |
-| `POST /v1/intent` end-to-end, warm cache | 0.68 ms |
-| `POST /v1/intent` BLOCK, no oracle call | 0.49 ms |
-| **Treasury feed fetch** | **8,000–10,400 ms** |
+The blueprint documents defects in its own implementation. **Do not "fix" these back toward it.**
+Signature before replay · revocation fails closed on stale data · `local_only` store never stale ·
+FIFO nonce eviction · risk-relative tier selection · `per_day` and `asset_classes` enforced ·
+no `valid` field, `passed` is the single authority with a three-valued `checks` map ·
+`expires_at` required · denials signed too · non-finite floats rejected at the schema layer ·
+encrypted private keys supported with mode `0600`.
 
-The decision itself is free — the engine is 0.9% of the request. There is no performance
-argument against adding checks.
-
-### The live oracle is broken (`ARCHITECTURE.md` §18) — PARKED, do not fix during Phase 1
-
-Two independent causes, each sufficient:
-
-1. `oracle/treasury.py:16` points at `.../interest-rates/yield.xml`, which serves a legacy
-   `QR_BC_CM` document with **no `<entry>` elements**. `parse_yield_curve` finds none and
-   returns `None`. **The parser is correct** — against Treasury's OData/Atom feed it returns
-   `(2026-08-20, 3.87)` on the first try. Only the URL constant is wrong.
-2. Both feeds take 8–10 s against a 3 s timeout with one retry (~7 s wall, then `None`).
-
-Net effect: default configuration returns `CUSTOS-E300` to **every** request. Fail-closed
-behaviour is correct; availability is zero. Every demo that shows an ALLOW substitutes the
-oracle. The fix is one line for the URL plus one for the timeout — but it is **deliberately
-out of Phase 1 scope**, and `oracle/` keeps its interface so it can land independently at any
-time.
-
-Also verified: with a working oracle and today's curve, **all four seeded assets block**,
-including the "healthy" one (claims 400 bps; 3M prints 387; drift 3.36% > 2%). That is what
-`POST /v1/demo/sync` exists to correct.
+Two honesty rules that show up in the code and should stay:
+- **An unregistered agent yields `CUSTOS-E100`**, detail `"No registered key for agent <id>;
+  signature cannot be verified."` The taxonomy has no `UNKNOWN_AGENT`; a signature that cannot be
+  validated is an invalid signature, and it fails closed.
+- **A Tier 2 envelope reports `tier_used = TIER_1`** in Phase 1. Claiming `TIER_2` while running
+  Tier 1 checks would be a lie a relying party cannot detect.
 
 ---
 
-## 7. Deliberate divergences from the AIP blueprint
+## 8. Working agreements
 
-The blueprint documents defects in its own implementation. Since we are writing fresh, these
-are built correctly. **Do not "fix" them back toward the blueprint** — each is intentional and
-recorded in the spec.
-
-| # | Custos does | AIP does | Why |
-|---|---|---|---|
-| 1 | **Signature checked before replay** | Replay first | Otherwise an unauthenticated attacker burns a victim's nonce with a garbage envelope |
-| 2 | **Revocation fails closed on stale data** | Returns `NOT_REVOKED`, fails open | The blueprint's own highest-severity finding: revoking an org stops working ~500 ms later |
-| 3 | `local_only` store is **never stale** | n/a | Failing closed on a store with no upstream would be a self-inflicted outage |
-| 4 | **FIFO nonce cache with time-based expiry** | `set` with arbitrary eviction | Arbitrary eviction leaves a probabilistic replay hole past the cap |
-| 5 | **Risk-relative tier selection** (`amount / per_transaction > 0.5`) | Flat `amount > 100` | The flat rule inverts risk ordering — the blueprint says so itself |
-| 6 | **`per_day` and `asset_classes` enforced** | Signed and ignored | A boundary that is signed but unenforced is a lie in the payload |
-| 7 | **Delegation monotonicity enforced** *(Phase 2)* | Declared, never read | Same |
-| 8 | **No `valid` field — `passed` is the single authority**, with a three-valued `checks` map | Both `valid` and `passed`, patched up at Tier 0 | Removes the documented trap; `NOT_RUN` becomes representable without lying |
-| 9 | **`expires_at` required** | Nullable | A nullable expiry means an envelope that never expires |
-| 10 | **Denials are signed too** | Only ALLOW signed | Otherwise a relying party cannot prove it was denied |
-| 11 | **Non-finite floats rejected at the schema layer** | Normalizer crashes on them | — |
-| 12 | **Encrypted private keys supported, file mode `0600`** | `NoEncryption()`, no chmod | — |
-
-Two Phase-1-specific honesty rules:
-
-- **An unregistered agent yields `CUSTOS-E100`** (`INVALID_SIGNATURE`) with detail
-  `"No registered key for agent <id>; signature cannot be verified."` The taxonomy is fixed at
-  30 codes and has no `UNKNOWN_AGENT`. An envelope whose signature cannot be validated is
-  exactly an invalid signature, and it fails closed.
-- **A Tier 2 envelope reports `tier_used = TIER_1`** in Phase 1. Claiming `TIER_2` while
-  running Tier 1 checks would be a lie a relying party cannot detect.
-
----
-
-## 8. Breaking changes Phase 1 introduces
-
-- **The `custos/1` envelope is gone**, replaced by the JSON-LD-flavoured `CustosEnvelope`
-  (`@context: https://custos.protocol/v1`, `@type: CustosEnvelope`, `protocol_version: 1.0.0`).
-  Every test, demo and doc is rewritten in the same pass — there is no half-migrated state.
-- **Every error code is renumbered** into the five-family shape. All eleven current codes
-  survive semantically. The old→new table is in spec §16.2. Examples:
-  `E101 CLAIM_STALE → E300`, `E201 YIELD_DRIFT → E301`, `E300 ORACLE_UNAVAILABLE → E500`.
-- **`models/`, `attest/`, `gateway/validation.py` and `config.py` are deleted**, folded into
-  `custos_protocol/` and `gateway/config.py`.
-- **`POST /v1/demo/sync` moves behind `CUSTOS_DEMO_MODE=1`** — it is currently an
-  unauthenticated state-mutation endpoint in the public OpenAPI schema.
-- **`CUSTOS_FAIL_MODE` is deleted** — documented as `closed | open`, read by nothing.
-- **`CUSTOS_DOWNSTREAM_TIMEOUT` is added** — the downstream proxy currently reuses the oracle
-  timeout knob.
-
----
-
-## 9. Open decisions awaiting the user
-
-1. **Execution mode** — subagent-driven (recommended) or inline via `executing-plans`.
-2. **`demo/live.html`** — Task 14 downgrades the browser demo's "Evaluate intent" button to
-   `GET /v1/assets/{id}`, because a web page cannot hold a signing key safely and every
-   envelope must now be signed. That is a real capability loss in the demo. Worth confirming
-   before it is built.
-3. **When to land the oracle P0** — independent of everything above; one line for the URL, one
-   for the timeout, plus the live-shape test the original spec called for and nobody wrote.
-
----
-
-## 10. Repo state right now
-
-```
-Untracked, uncommitted:
-  ARCHITECTURE.md                                              ← audit of the CURRENT system
-  architecture1.md                                             ← the AIP blueprint (input, do not edit)
-  continue.md                                                  ← this file
-  docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md
-  docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md
-
-Unchanged from HEAD (be4a191):
-  custos source, tests, demos — no code was modified this session
-```
-
-Nothing is committed because the user was on `main` and had not asked for commits. If you are
-asked to commit, **branch first**.
-
----
-
-## 11. Working agreements observed this session
-
-- The user prefers being told what changed and why, concisely, with the reasoning visible.
+- Tell the user what changed and why, concisely, with the reasoning visible.
 - Do not commit or push unless explicitly asked.
-- Do not spawn subagents unless asked. (`subagent-driven-development` for plan execution is
-  the exception — the user picks it.)
-- The superpowers workflow was followed: `brainstorming` → `writing-plans` → *(next: an
-  execution skill)*. Both gates were approved by the user.
-- Findings are reported plainly with evidence. Several claims in the repo's own docs did not
-  survive execution; those are catalogued in `ARCHITECTURE.md` §19 and §22 rather than
-  smoothed over.
+- Do not spawn subagents unless asked.
+- Report findings plainly with evidence. Several claims in the repo's own docs did not survive
+  execution; those are catalogued in `ARCHITECTURE.md` §19 and §22 rather than smoothed over.

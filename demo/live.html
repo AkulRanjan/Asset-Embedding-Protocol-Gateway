@@ -27,18 +27,22 @@
         </div>
       </section>
       <section class="panel">
-        <div class="eyebrow">Run an attestation</div>
+        <div class="eyebrow">Inspect an asset</div>
         <select id="asset">
           <option value="TKN-UST-3M-002">Stale claim — TKN-UST-3M-002</option>
           <option value="TKN-UST-3M-003">Recent but drifted — TKN-UST-3M-003</option>
           <option value="TKN-UST-6M-004">Under-backed — TKN-UST-6M-004</option>
           <option value="TKN-UST-3M-001">Healthy claim — TKN-UST-3M-001</option>
         </select>
-        <button onclick="attest()">Evaluate intent</button>
-        <small id="notice">Live market sync runs automatically on page load.</small>
+        <button onclick="inspect()">Inspect asset</button>
+        <small id="notice">Read-only: this returns the claim, the live observation and the
+          asset-truth evaluation via <code>GET /v1/assets/{id}</code>. It does not submit a
+          signed intent &mdash; every envelope must now carry an Ed25519 signature, and a web
+          page cannot hold a signing key safely. For the full signed flow see
+          <code>demo/run_local_demo.py</code>. Live market sync runs on page load.</small>
       </section>
     </div>
-    <section class="panel" style="margin-top:18px"><div class="eyebrow">Gateway response</div><pre id="output">Click “Sync live market” to begin.</pre></section>
+    <section class="panel" style="margin-top:18px"><div class="eyebrow">Gateway response</div><pre id="output">Choose an asset and click “Inspect asset”. “Sync live market” requires CUSTOS_DEMO_MODE=1.</pre></section>
   </main>
   <script>
     const output=document.getElementById('output'),status=document.getElementById('status'),dot=document.getElementById('dot');
@@ -51,8 +55,8 @@
         const obs=data.observations['3M'];document.getElementById('yield').textContent=(obs.observed_yield_bps/100).toFixed(2)+'%';document.getElementById('yieldMeta').textContent=`${obs.tenor} Treasury yield • record ${obs.record_date} • ${obs.cache_hit?'cached':'live fetch'}`;
         setState(true,'Live market reference synchronized. Ready to attest.');document.getElementById('notice').textContent=data.notice;
       }catch(e){setState(false,'Live market unavailable — Custos will fail closed.');document.getElementById('notice').textContent='No demo claim was synchronized. Try again when the Treasury feed is reachable.';show({error:String(e)})}}
-    async function attest(){const t=new Date(),exp=new Date(t.getTime()+300000);const intent={envelope_version:'custos/1',agent_id:'did:web:acme.com:agents:treasury-bot',action:'borrow_against',asset_id:document.getElementById('asset').value,amount:'50000.00',currency:'USD',issued_at:t.toISOString(),expires_at:exp.toISOString()};
-      const r=await fetch('/v1/intent',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(intent)});show(await r.json())}
+    async function inspect(){const id=document.getElementById('asset').value;
+      const r=await fetch('/v1/assets/'+encodeURIComponent(id));show(await r.json())}
     synchronize();setInterval(()=>fetch('/v1/health').then(r=>r.json()).then(d=>{if(d.oracle_reachable)setState(true,'Live market reference available.');}).catch(()=>setState(false,'Live market unavailable — Custos will fail closed.')),60000);
   </script>
 </body>
