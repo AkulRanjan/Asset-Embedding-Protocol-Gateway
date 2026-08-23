@@ -1,175 +1,235 @@
+"""HTTP surface. Parse, resolve domain inputs, verify, sign, render."""
+
 from __future__ import annotations
 
-import uuid
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, Request
+from fastapi import APIRouter, FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, ValidationError
 
-import config
-from attest import AttestationSigner, evaluate
-from attest.errors import ERRORS
 from claims import ClaimRegistry
+from custos_protocol.attestation import RecordSigner
+from custos_protocol.crypto import load_private_key
+from custos_protocol.envelope import envelope_hash
+from custos_protocol.errors import CustosErrorCode, http_status_for
+from custos_protocol.models import CustosEnvelope, VerificationTier
+from custos_protocol.revocation import RevocationStore, SubjectType
+from custos_protocol.verification import verify_intent
+from gateway import config
+from gateway.keys import AgentKeyRegistry
 from gateway.proxy import forward
-from gateway.validation import validate_temporal_envelope
-from models import Attestation, BlockResponse, Intent
 from oracle.treasury import TreasuryOracle, UnsupportedTenor
 
-app = FastAPI(title="Custos Gateway", version="0.1.0", description="Real-time tokenized Treasury claim attestation gateway.")
+app = FastAPI(
+    title="Custos Gateway",
+    version="1.0.0",
+    description="Pre-transaction asset-truth attestation for autonomous agents.",
+)
+
 registry = ClaimRegistry()
-oracle = TreasuryOracle()
-signer = AttestationSigner()
+oracle = TreasuryOracle(
+    timeout_seconds=config.ORACLE_TIMEOUT_SECONDS,
+    cache_ttl_seconds=config.ORACLE_CACHE_TTL_SECONDS,
+)
+revocations = RevocationStore()
+agent_keys = AgentKeyRegistry()
+drift_config = config.load_drift_config()
+signer = RecordSigner(
+    load_private_key(Path(config.PRIVATE_KEY_PATH)) if config.PRIVATE_KEY_PATH else None,
+    ttl_seconds=config.ATTESTATION_TTL_SECONDS,
+)
 
 
-def now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def json_response(model: Any, status_code: int = 200) -> JSONResponse:
+def _render(model: Any, status_code: int = 200) -> JSONResponse:
     return JSONResponse(status_code=status_code, content=jsonable_encoder(model))
 
 
-def block(code: str, detail: str, *, asset_id: str | None = None) -> BlockResponse:
-    error = ERRORS[code]
-    return BlockResponse(error=error.code, error_name=error.name, detail=detail, asset_id=asset_id, issued_at=now())
+def _deny(envelope_hash_value: str, agent_id: str, asset_id: str | None,
+          errors: list[CustosErrorCode], detail: str,
+          scores=None, reference=None) -> JSONResponse:
+    denial = signer.sign_denial(
+        envelope_hash=envelope_hash_value, agent_id=agent_id, asset_id=asset_id,
+        errors=errors, detail=detail, scores=scores, reference=reference,
+    )
+    return _render(denial, http_status_for(errors[0]))
 
 
 @app.exception_handler(RequestValidationError)
-async def request_validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-    error = ERRORS["CUSTOS-E100"]
-    response = BlockResponse(error=error.code, error_name=error.name,
-                             detail="Envelope schema validation failed.", issued_at=now())
-    return json_response(response, error.status_code)
-
-
-def make_attestation(intent: Intent, scores, claim, observation) -> Attestation:
-    issued_at = now()
-    reference = {
-        "source": observation.source,
-        "tenor": observation.tenor,
-        "claimed_yield_bps": claim.claimed_yield_bps,
-        "observed_yield_bps": observation.observed_yield_bps,
-        "record_date": observation.record_date.isoformat(),
-    }
-    attestation = Attestation(
-        attestation_id=f"att_{uuid.uuid4().hex}", asset_id=intent.asset_id,
-        agent_id=intent.agent_id, action=intent.action.value, amount=intent.amount,
-        scores=scores, reference=reference, issued_at=issued_at,
-        expires_at=issued_at + timedelta(seconds=config.ATTESTATION_TTL_SECONDS),
-        public_key=signer.public_key_base64,
+async def _schema_error(_: Request, exc: RequestValidationError) -> JSONResponse:
+    denial = signer.sign_denial(
+        envelope_hash="", agent_id="", errors=[CustosErrorCode.SCHEMA_INVALID],
+        detail="Envelope failed schema validation.",
     )
-    payload = attestation.model_dump(mode="json")
-    attestation.signature = signer.sign(payload)
-    return attestation
+    return _render(denial, http_status_for(CustosErrorCode.SCHEMA_INVALID))
 
 
-async def assess(intent: Intent):
-    claim = registry.get_claim(intent.asset_id)
+class AgentRegistration(BaseModel):
+    agent_id: str
+    public_key: str
+
+
+@app.post("/v1/agents", status_code=201)
+async def register_agent(registration: AgentRegistration) -> dict:
+    agent_keys.register(registration.agent_id, registration.public_key)
+    return {"registered": registration.agent_id}
+
+
+async def _resolve(envelope: CustosEnvelope):
+    """Returns (claim, observation, tenor_error)."""
+    claim = registry.get_claim(envelope.intent.target)
     if claim is None:
-        result = evaluate(intent, None, None)
-        return result, None, None
+        return None, None, None
     try:
         observation = await oracle.get_observation(claim.underlying_tenor)
     except UnsupportedTenor:
-        return block("CUSTOS-E203", f"Underlying tenor {claim.underlying_tenor} has no Treasury yield mapping.", asset_id=claim.asset_id), claim, None
-    return evaluate(intent, claim, observation), claim, observation
+        return claim, None, CustosErrorCode.TENOR_UNSUPPORTED
+    return claim, observation, None
 
 
 @app.post("/v1/intent", response_model=None)
-async def post_intent(intent: Intent):
-    temporal_error = validate_temporal_envelope(intent)
-    if temporal_error:
-        return json_response(temporal_error, ERRORS[temporal_error.error].status_code)
-    result, claim, observation = await assess(intent)
-    if isinstance(result, BlockResponse):
-        return json_response(result, ERRORS[result.error].status_code)
-    attestation = make_attestation(intent, result, claim, observation)
-    if intent.downstream is None:
-        return json_response(attestation)
+async def post_intent(envelope: CustosEnvelope, request: Request):
+    digest = envelope_hash(envelope)
+
+    public_key = agent_keys.get(envelope.agent.id)
+    if public_key is None:
+        return _deny(digest, envelope.agent.id, envelope.intent.target,
+                     [CustosErrorCode.INVALID_SIGNATURE],
+                     f"No registered key for agent {envelope.agent.id}; signature cannot be verified.")
+
+    claim = observation = None
+    if envelope.verification_tier is not VerificationTier.TIER_0:
+        claim, observation, tenor_error = await _resolve(envelope)
+        if tenor_error is not None:
+            return _deny(digest, envelope.agent.id, envelope.intent.target,
+                         [tenor_error],
+                         f"Tenor {claim.underlying_tenor} has no yield-curve mapping.")
+
+    result = verify_intent(
+        envelope, public_key,
+        claim=claim, observation=observation,
+        revocation_store=revocations, drift_config=drift_config,
+        request_geo=request.headers.get("X-Custos-Geo"),
+        clock_skew_seconds=drift_config.clock_skew_seconds,
+    )
+
+    if not result.passed:
+        return _deny(digest, envelope.agent.id, envelope.intent.target,
+                     result.errors, result.detail, result.scores, result.reference)
+
+    attestation = signer.sign_attestation(
+        envelope_hash=digest, agent_id=envelope.agent.id,
+        asset_id=envelope.intent.target, action=envelope.intent.action.value,
+        amount=envelope.intent.parameters.get("amount"),
+        tier_used=result.tier_used, scores=result.scores, reference=result.reference,
+    )
+
+    downstream_url = envelope.intent.parameters.get("downstream")
+    if not downstream_url:
+        return _render(attestation)
+
     try:
-        downstream = await forward(intent, attestation)
+        downstream = await forward(str(downstream_url), envelope, attestation)
     except ConnectionError:
-        failure = block("CUSTOS-E400", "Attestation was allowed, but the downstream service could not be reached.", asset_id=intent.asset_id)
-        return json_response(failure, ERRORS[failure.error].status_code)
-    return json_response({"attestation": attestation, "downstream": downstream})
+        return _render(
+            {"attestation": jsonable_encoder(attestation),
+             "downstream": {"errors": [CustosErrorCode.DOWNSTREAM_UNREACHABLE.value],
+                            "detail": "The downstream service could not be reached."}},
+            http_status_for(CustosErrorCode.DOWNSTREAM_UNREACHABLE),
+        )
+    return _render({"attestation": attestation, "downstream": downstream})
 
 
 @app.get("/v1/assets")
 async def list_assets():
-    return json_response({"assets": registry.list_claims()})
+    return _render({"assets": registry.list_claims()})
 
 
 @app.get("/v1/assets/{asset_id}", response_model=None)
 async def get_asset(asset_id: str):
     claim = registry.get_claim(asset_id)
     if claim is None:
-        failure = block("CUSTOS-E200", "The requested asset is not present in the claim registry.", asset_id=asset_id)
-        return json_response(failure, ERRORS[failure.error].status_code)
-    diagnostic_intent = Intent(envelope_version="custos/1", agent_id="diagnostic", action="trade", asset_id=asset_id,
-                               amount="0.01", currency="USD", issued_at=now(), expires_at=now() + timedelta(minutes=1))
-    result, _, observation = await assess(diagnostic_intent)
-    return json_response({"claim": claim, "observation": observation, "evaluation": result})
+        return _deny("", "diagnostic", asset_id, [CustosErrorCode.UNKNOWN_ASSET],
+                     "The requested asset is not present in the claim registry.")
+    try:
+        observation = await oracle.get_observation(claim.underlying_tenor)
+    except UnsupportedTenor:
+        observation = None
+
+    from custos_protocol.drift import check_asset_truth
+
+    evaluation = check_asset_truth(claim, observation, drift_config)
+    return _render({"claim": claim, "observation": observation, "evaluation": evaluation})
 
 
 @app.get("/v1/pubkey")
 async def get_public_key():
-    return {"algorithm": "Ed25519", "public_key": signer.public_key_base64, "public_key_pem": signer.public_key_pem}
+    return {
+        "algorithm": "Ed25519",
+        "public_key": signer.public_key_b64,
+        "public_key_pem": signer.public_key_pem,
+    }
 
 
 @app.get("/v1/health", response_model=None)
 async def health():
     try:
         observation = await oracle.get_observation("3M")
-    except UnsupportedTenor:  # impossible unless code is modified
+    except UnsupportedTenor:  # pragma: no cover - impossible unless the map changes
         observation = None
-    status = "ok" if observation else "degraded"
-    return json_response({"status": status, "oracle_reachable": observation is not None, "observation": observation}, 200 if observation else 503)
+    ok = observation is not None
+    return _render(
+        {"status": "ok" if ok else "degraded",
+         "oracle_reachable": ok,
+         "observation": observation},
+        200 if ok else 503,
+    )
 
 
-@app.post("/v1/demo/sync", response_model=None)
+@app.get("/demo", include_in_schema=False)
+async def live_demo_page():
+    return FileResponse(Path(__file__).resolve().parents[1] / "demo" / "live.html")
+
+
+# ---- demo-only routes, mounted only when CUSTOS_DEMO_MODE is set ----
+
+demo_router = APIRouter()
+
+
+@demo_router.post("/v1/demo/sync", response_model=None)
 async def sync_live_demo_claims():
-    """Align simulated demo claims to current market observations.
-
-    This endpoint makes the presentation deterministic *after* a live oracle
-    fetch. It never changes a chain claim or production source of truth; the
-    seeded registry is an explicitly in-memory v1 simulation.
-    """
-    observations = {}
+    """Align simulated demo claims to current observations. Never touches a real source of truth."""
+    observations: dict[str, Any] = {}
     for tenor in {claim.underlying_tenor for claim in registry.list_claims()}:
         try:
             observation = await oracle.get_observation(tenor)
         except UnsupportedTenor:
-            failure = block("CUSTOS-E203", f"Underlying tenor {tenor} has no Treasury yield mapping.")
-            return json_response(failure, ERRORS[failure.error].status_code)
+            return _render({"errors": [CustosErrorCode.TENOR_UNSUPPORTED.value]}, 422)
         if observation is None:
-            failure = block("CUSTOS-E300", "Live Treasury data is unavailable; demo claims were not synchronized.")
-            return json_response(failure, ERRORS[failure.error].status_code)
+            return _render({"errors": [CustosErrorCode.ORACLE_UNAVAILABLE.value]}, 503)
         observations[tenor] = observation
 
     updated = []
     for claim in registry.list_claims():
         observed = observations[claim.underlying_tenor].observed_yield_bps
         if claim.asset_id == "TKN-UST-3M-003":
-            # More than the 2% drift threshold, while staying plausible in bps.
             yield_bps = max(1, observed - max(40, round(observed * 0.04)))
         else:
             yield_bps = observed
         synced = registry.update_claim(claim.asset_id, claimed_yield_bps=yield_bps)
         if synced:
             updated.append({"asset_id": synced.asset_id, "claimed_yield_bps": synced.claimed_yield_bps})
-    return json_response({
+
+    return _render({
         "mode": "live-market-demo",
-        "notice": "Treasury observations are live; claim records remain simulated in memory.",
+        "notice": "Market observations are live; claim records remain simulated in memory.",
         "observations": observations,
         "updated_claims": updated,
     })
 
 
-@app.get("/demo", include_in_schema=False)
-async def live_demo_page():
-    return FileResponse(Path(__file__).resolve().parents[1] / "demo" / "live.html")
+if config.DEMO_MODE:
+    app.include_router(demo_router)
