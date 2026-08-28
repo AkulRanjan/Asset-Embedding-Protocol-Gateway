@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -37,6 +38,10 @@ class DemoOracle:
 
 
 async def run() -> None:
+    admin_key = os.getenv("CUSTOS_ADMIN_API_KEY")
+    if not admin_key:
+        raise SystemExit("Set CUSTOS_ADMIN_API_KEY before running this demo.")
+
     console = Console()
     original = server.oracle
     server.oracle = DemoOracle()
@@ -64,7 +69,7 @@ async def run() -> None:
             await client.post("/v1/agents", json={
                 "agent_id": passport.agent.id,
                 "public_key": public_key_to_b64(passport.public_key),
-            })
+            }, headers={"X-Custos-Admin-Key": admin_key})
             gateway_key = (await client.get("/v1/pubkey")).json()["public_key"]
 
             for name, asset_id, expected in scenarios:

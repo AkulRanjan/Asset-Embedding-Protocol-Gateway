@@ -8,6 +8,8 @@ The protocol lives in `custos_protocol/` — a standalone SDK with no dependency
 
 ```powershell
 python -m pip install -r requirements.txt
+$env:CUSTOS_ADMIN_API_KEY = "replace-with-a-long-random-secret"
+$env:CUSTOS_PRIVATE_KEY = "C:\path\to\custos-gateway-ed25519.pem"
 python -m uvicorn gateway.server:app --reload
 ```
 
@@ -49,6 +51,10 @@ To demonstrate forwarding, start `python -m uvicorn demo.mock_lender:app --port 
 An envelope from an agent with no registered key returns `CUSTOS-E100`: a signature that cannot be validated is an invalid signature, and it fails closed.
 
 ## Configuration
+
+`CUSTOS_ADMIN_API_KEY` is required for state-changing control-plane routes. Keep it in a
+secret store in production and send it only as `X-Custos-Admin-Key`. It has no default:
+registration and demo sync fail closed until it is configured.
 
 `CUSTOS_STALENESS_HOURS`, `CUSTOS_DRIFT_THRESHOLD`, `CUSTOS_BACKING_FLOOR`, `CUSTOS_MAX_OBS_AGE_DAYS`, `CUSTOS_ZERO_YIELD_TOLERANCE_BPS`, `CUSTOS_CLOCK_SKEW_SECONDS`, `CUSTOS_ORACLE_TIMEOUT`, `CUSTOS_DOWNSTREAM_TIMEOUT`, `CUSTOS_CACHE_TTL`, `CUSTOS_ATTESTATION_TTL`, `CUSTOS_PRIVATE_KEY` and `CUSTOS_DEMO_MODE` are supported. The private-key value is a path to an Ed25519 PEM; without it Custos generates an ephemeral demo key at startup.
 

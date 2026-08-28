@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, FastAPI, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
@@ -20,7 +21,8 @@ from custos_protocol.models import CustosEnvelope, VerificationTier
 from custos_protocol.revocation import RevocationStore, SubjectType
 from custos_protocol.verification import verify_intent
 from gateway import config
-from gateway.keys import AgentKeyRegistry
+from gateway.auth import require_admin
+from gateway.keys import AgentAlreadyRegistered, AgentKeyRegistry
 from gateway.proxy import forward
 from oracle.treasury import TreasuryOracle, UnsupportedTenor
 
@@ -30,6 +32,8 @@ app = FastAPI(
     description="Pre-transaction asset-truth attestation for autonomous agents.",
 )
 
+logger = logging.getLogger(__name__)
+
 registry = ClaimRegistry()
 oracle = TreasuryOracle(
     timeout_seconds=config.ORACLE_TIMEOUT_SECONDS,
@@ -38,10 +42,20 @@ oracle = TreasuryOracle(
 revocations = RevocationStore()
 agent_keys = AgentKeyRegistry()
 drift_config = config.load_drift_config()
-signer = RecordSigner(
-    load_private_key(Path(config.PRIVATE_KEY_PATH)) if config.PRIVATE_KEY_PATH else None,
-    ttl_seconds=config.ATTESTATION_TTL_SECONDS,
-)
+def _create_signer() -> RecordSigner:
+    if config.PRIVATE_KEY_PATH:
+        return RecordSigner(
+            load_private_key(Path(config.PRIVATE_KEY_PATH)),
+            ttl_seconds=config.ATTESTATION_TTL_SECONDS,
+        )
+    logger.warning(
+        "CUSTOS_PRIVATE_KEY is not configured; using an ephemeral gateway signing key. "
+        "Attestations will become unverifiable after restart."
+    )
+    return RecordSigner(ttl_seconds=config.ATTESTATION_TTL_SECONDS)
+
+
+signer = _create_signer()
 
 
 def _render(model: Any, status_code: int = 200) -> JSONResponse:
@@ -73,8 +87,14 @@ class AgentRegistration(BaseModel):
 
 
 @app.post("/v1/agents", status_code=201)
-async def register_agent(registration: AgentRegistration) -> dict:
-    agent_keys.register(registration.agent_id, registration.public_key)
+async def register_agent(registration: AgentRegistration, _: None = Depends(require_admin)) -> dict:
+    try:
+        agent_keys.register(registration.agent_id, registration.public_key)
+    except AgentAlreadyRegistered as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An Ed25519 public key is already registered for this agent.",
+        ) from exc
     return {"registered": registration.agent_id}
 
 
@@ -200,7 +220,7 @@ demo_router = APIRouter()
 
 
 @demo_router.post("/v1/demo/sync", response_model=None)
-async def sync_live_demo_claims():
+async def sync_live_demo_claims(_: None = Depends(require_admin)):
     """Align simulated demo claims to current observations. Never touches a real source of truth."""
     observations: dict[str, Any] = {}
     for tenor in {claim.underlying_tenor for claim in registry.list_claims()}:

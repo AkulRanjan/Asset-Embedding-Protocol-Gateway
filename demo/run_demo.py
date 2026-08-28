@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -26,7 +27,7 @@ from custos_protocol.models import Action                            # noqa: E40
 from custos_protocol.passport import AgentPassport                   # noqa: E402
 
 
-def main(base_url: str) -> None:
+def main(base_url: str, admin_key: str) -> None:
     console = Console()
     passport = AgentPassport.create(
         domain="acme.com", agent_name="treasury-bot",
@@ -38,7 +39,7 @@ def main(base_url: str) -> None:
         registration = client.post("/v1/agents", json={
             "agent_id": passport.agent.id,
             "public_key": public_key_to_b64(passport.public_key),
-        })
+        }, headers={"X-Custos-Admin-Key": admin_key})
         registration.raise_for_status()
         console.print(f"[dim]Registered {passport.agent.id} with the gateway.[/dim]")
 
@@ -62,4 +63,11 @@ def main(base_url: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-url", default="http://127.0.0.1:8000")
-    main(parser.parse_args().base_url)
+    parser.add_argument(
+        "--admin-key", default=os.getenv("CUSTOS_ADMIN_API_KEY"),
+        help="administrator API key (or set CUSTOS_ADMIN_API_KEY)",
+    )
+    args = parser.parse_args()
+    if not args.admin_key:
+        parser.error("--admin-key or CUSTOS_ADMIN_API_KEY is required to register an agent")
+    main(args.base_url, args.admin_key)

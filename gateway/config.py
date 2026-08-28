@@ -30,4 +30,8 @@ DOWNSTREAM_TIMEOUT_SECONDS = float(_env("CUSTOS_DOWNSTREAM_TIMEOUT", "3.0"))
 ORACLE_CACHE_TTL_SECONDS = int(_env("CUSTOS_CACHE_TTL", "60"))
 ATTESTATION_TTL_SECONDS = int(_env("CUSTOS_ATTESTATION_TTL", "300"))
 PRIVATE_KEY_PATH = os.getenv("CUSTOS_PRIVATE_KEY")
+# Control-plane authentication is deliberately independent from envelope
+# signatures: it protects the initial binding of an external agent identity to
+# a public key. An empty value is treated as unconfigured and fails closed.
+ADMIN_API_KEY = os.getenv("CUSTOS_ADMIN_API_KEY") or None
 DEMO_MODE = _env("CUSTOS_DEMO_MODE", "").lower() in {"1", "true", "yes"}

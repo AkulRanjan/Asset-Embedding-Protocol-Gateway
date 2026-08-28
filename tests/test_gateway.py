@@ -29,10 +29,15 @@ class DeadOracle:
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.setattr(server, "oracle", FixedOracle())
+    monkeypatch.setattr(server.config, "ADMIN_API_KEY", "test-admin-key")
     server.registry = server.ClaimRegistry()
     server.revocations = server.RevocationStore()
     server.agent_keys = server.AgentKeyRegistry()
     return TestClient(server.app)
+
+
+def admin_headers() -> dict[str, str]:
+    return {"X-Custos-Admin-Key": "test-admin-key"}
 
 
 @pytest.fixture
@@ -45,7 +50,7 @@ def agent(client):
     response = client.post("/v1/agents", json={
         "agent_id": passport.agent.id,
         "public_key": public_key_to_b64(passport.public_key),
-    })
+    }, headers=admin_headers())
     assert response.status_code == 201
     return passport
 
