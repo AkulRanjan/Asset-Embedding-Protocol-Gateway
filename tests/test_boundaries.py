@@ -71,6 +71,39 @@ def test_zero_per_transaction_limit_means_no_limit():
     assert check_boundaries(envelope(amount=10**9, monetary_limit_per_txn=0.0), claim()) == []
 
 
+def test_amount_over_per_day_limit_is_rejected():
+    result = check_boundaries(
+        envelope(amount=600, monetary_limit_per_day=1000.0), claim(), day_total=500,
+    )
+    assert CustosErrorCode.MONETARY_LIMIT_PER_DAY in result
+
+
+def test_amount_within_remaining_per_day_budget_passes():
+    result = check_boundaries(
+        envelope(amount=400, monetary_limit_per_day=1000.0), claim(), day_total=500,
+    )
+    assert CustosErrorCode.MONETARY_LIMIT_PER_DAY not in result
+
+
+def test_amount_exactly_at_the_per_day_limit_passes():
+    result = check_boundaries(
+        envelope(amount=500, monetary_limit_per_day=1000.0), claim(), day_total=500,
+    )
+    assert CustosErrorCode.MONETARY_LIMIT_PER_DAY not in result
+
+
+def test_zero_per_day_limit_means_no_limit():
+    result = check_boundaries(
+        envelope(amount=10**9, monetary_limit_per_day=0.0), claim(), day_total=10**9,
+    )
+    assert CustosErrorCode.MONETARY_LIMIT_PER_DAY not in result
+
+
+def test_per_day_limit_is_inert_by_default_with_no_day_total_supplied():
+    result = check_boundaries(envelope(amount=100, monetary_limit_per_day=1000.0), claim())
+    assert CustosErrorCode.MONETARY_LIMIT_PER_DAY not in result
+
+
 def test_time_window_violation():
     holder = AgentPassport.create(domain="acme.com", agent_name="bot")
     holder.boundaries.time_window = TimeWindow(

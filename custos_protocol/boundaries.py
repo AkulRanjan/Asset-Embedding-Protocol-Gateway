@@ -3,8 +3,10 @@
 Violations accumulate rather than short-circuiting, so one envelope can report
 every boundary it broke in a single response.
 
-Phase 1 implements predicates 1, 2, 3, 5, 6 and 7. Predicate 4
-(CUSTOS-E203, rolling per-day limit) requires the ledger introduced in Phase 2.
+Predicate 4 (CUSTOS-E203, rolling per-day limit) needs the amount already spent
+today, which lives on trust.py's ledger. This module stays a pure function with no
+dependency on trust.py: the caller (verification.py) looks up the ledger and passes
+the total in as `day_total`.
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ def check_boundaries(
     *,
     request_geo: str | None = None,
     now: datetime | None = None,
+    day_total: float = 0.0,
 ) -> list[CustosErrorCode]:
     now = now or datetime.now(timezone.utc)
     boundaries = envelope.boundaries
@@ -46,6 +49,12 @@ def check_boundaries(
     per_transaction = boundaries.monetary_limit.per_transaction
     if amount is not None and per_transaction > 0 and amount > per_transaction:
         violations.append(CustosErrorCode.MONETARY_LIMIT_PER_TXN)
+
+    # 4. Rolling per-day monetary limit. `day_total` is the amount already spent in
+    # the trailing window, supplied by the caller — this function stays pure.
+    per_day = boundaries.monetary_limit.per_day
+    if amount is not None and per_day > 0 and day_total + amount > per_day:
+        violations.append(CustosErrorCode.MONETARY_LIMIT_PER_DAY)
 
     # 5. Time window.
     window = boundaries.time_window
