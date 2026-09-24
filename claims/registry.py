@@ -32,6 +32,9 @@ class ClaimRegistry:
         claim = self._claims.get(asset_id)
         if claim is None:
             return None
-        updated = claim.model_copy(update=updates)
+        # model_copy(update=...) would skip validators entirely; merge into the
+        # existing dump and re-validate so an update can never install a value the
+        # schema itself forbids (e.g. a negative yield or zero tokens_outstanding).
+        updated = Claim.model_validate({**claim.model_dump(), **updates})
         self._claims[asset_id] = updated
         return updated
