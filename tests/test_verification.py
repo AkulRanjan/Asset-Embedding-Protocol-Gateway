@@ -17,6 +17,7 @@ from custos_protocol.models import (
 )
 from custos_protocol.passport import AgentPassport
 from custos_protocol.revocation import RevocationStore, SubjectType
+from custos_protocol.trust import TrustEngine
 from custos_protocol.verification import verify_intent
 
 
@@ -219,14 +220,16 @@ def test_tier_1_fails_closed_without_an_observation():
     assert CustosErrorCode.ORACLE_UNAVAILABLE in result.errors
 
 
-def test_tier_2_is_downgraded_honestly_in_phase_1():
-    """Reporting TIER_2 while running Tier 1 checks would be a lie."""
+def test_tier_2_actually_executes_delegation_and_trust():
+    """Phase 2: a Tier 2 request runs delegation + trust for real and reports TIER_2
+    honestly, rather than being served at Tier 1."""
     passport = holder(monetary_limit_per_txn=100.0)
     envelope, _ = signed(passport, amount=100, tier=VerificationTier.TIER_2)
     result = verify(envelope, passport)
-    assert result.tier_used is VerificationTier.TIER_1
-    assert result.checks["delegation"] is CheckOutcome.NOT_RUN
-    assert result.checks["trust"] is CheckOutcome.NOT_RUN
+    assert result.passed is True
+    assert result.tier_used is VerificationTier.TIER_2
+    assert result.checks["delegation"] is CheckOutcome.PASSED
+    assert result.checks["trust"] is CheckOutcome.PASSED
 
 
 def test_failure_is_fail_fast_and_later_checks_do_not_run():
@@ -234,3 +237,148 @@ def test_failure_is_fail_fast_and_later_checks_do_not_run():
     result = verify(envelope.model_copy(update={"protocol_version": "9.9.9"}), passport)
     assert result.checks["signature"] is CheckOutcome.NOT_RUN
     assert result.checks["boundaries"] is CheckOutcome.NOT_RUN
+
+
+# ---- Phase 2: delegation ---------------------------------------------------
+
+
+def test_tier_2_reports_a_delegation_monotonicity_violation():
+    """The envelope's own boundaries must not exceed what the delegation chain granted."""
+    passport = holder(monetary_limit_per_txn=100.0)
+    narrower_grant = passport.boundaries.model_copy(update={"allowed_actions": ["read"]})
+    passport.principal = passport.principal.model_copy(update={
+        "delegation_chain": [
+            passport.principal.delegation_chain[0].model_copy(update={"boundaries": narrower_grant})
+        ]
+    })
+    envelope, _ = signed(passport, amount=100, tier=VerificationTier.TIER_2)
+    result = verify(envelope, passport)
+    assert result.passed is False
+    assert CustosErrorCode.DELEGATION_INVALID in result.errors
+    assert result.checks["delegation"] is CheckOutcome.FAILED
+    assert result.checks["trust"] is CheckOutcome.NOT_RUN
+
+
+# ---- Phase 2: trust score gate ---------------------------------------------
+
+
+def test_tier_2_trust_score_gate_blocks_a_score_below_the_minimum():
+    envelope, passport = signed(amount=100, tier=VerificationTier.TIER_2)
+    engine = TrustEngine()
+    result = verify(envelope, passport, trust_engine=engine, min_trust_score=0.5)
+    assert result.passed is False
+    assert CustosErrorCode.TRUST_SCORE_LOW in result.errors
+    assert result.checks["delegation"] is CheckOutcome.PASSED
+    assert result.checks["trust"] is CheckOutcome.FAILED
+
+
+def test_min_trust_score_at_the_default_of_zero_is_inert():
+    envelope, passport = signed(amount=100, tier=VerificationTier.TIER_2)
+    result = verify(envelope, passport, trust_engine=TrustEngine())
+    assert result.passed is True
+
+
+# ---- Phase 2: attestation hash checks --------------------------------------
+
+
+def test_attestation_is_inert_without_any_known_hash_maps():
+    """Opt-in: a caller supplying nothing sees no behavior change from Phase 1."""
+    passport = holder(framework_id="langchain")
+    envelope, _ = signed(passport, amount=100)
+    assert verify(envelope, passport).passed is True
+
+
+def test_an_unregistered_framework_is_rejected():
+    passport = holder(framework_id="langchain")
+    envelope, _ = signed(passport, amount=100)
+    result = verify(envelope, passport, registered_frameworks={"crewai"})
+    assert CustosErrorCode.ATTESTATION_MISMATCH in result.errors
+    assert result.checks["attestation"] is CheckOutcome.FAILED
+
+
+def test_a_registered_framework_passes():
+    passport = holder(framework_id="langchain")
+    envelope, _ = signed(passport, amount=100)
+    assert verify(envelope, passport, registered_frameworks={"langchain"}).passed is True
+
+
+def test_a_build_hash_mismatch_is_rejected():
+    passport = holder(framework_id="langchain")
+    passport.agent = passport.agent.model_copy(update={
+        "attestation": passport.agent.attestation.model_copy(update={"build_hash": "actual-hash"})
+    })
+    envelope, _ = signed(passport, amount=100)
+    result = verify(envelope, passport, known_build_hashes={"langchain": "expected-hash"})
+    assert CustosErrorCode.ATTESTATION_MISMATCH in result.errors
+
+
+def test_a_matching_build_hash_passes():
+    passport = holder(framework_id="langchain")
+    passport.agent = passport.agent.model_copy(update={
+        "attestation": passport.agent.attestation.model_copy(update={"build_hash": "same-hash"})
+    })
+    envelope, _ = signed(passport, amount=100)
+    result = verify(envelope, passport, known_build_hashes={"langchain": "same-hash"})
+    assert result.passed is True
+
+
+def test_a_system_prompt_hash_mismatch_is_rejected():
+    passport = holder()
+    passport.agent = passport.agent.model_copy(update={
+        "attestation": passport.agent.attestation.model_copy(update={"system_prompt_hash": "actual"})
+    })
+    envelope, _ = signed(passport, amount=100)
+    result = verify(envelope, passport, known_prompt_hashes={passport.agent.id: "expected"})
+    assert CustosErrorCode.ATTESTATION_MISMATCH in result.errors
+
+
+# ---- Phase 2: trust bookkeeping --------------------------------------------
+
+
+def test_trust_history_is_not_recorded_for_a_pre_signature_failure():
+    """An attacker forging envelope.agent.id in a garbage envelope must not be able
+    to pollute that agent's trust history."""
+    envelope, passport = signed()
+    tampered = envelope.model_copy(update={
+        "intent": envelope.intent.model_copy(update={"parameters": {"amount": 999999}})
+    })
+    engine = TrustEngine()
+    result = verify(tampered, passport, trust_engine=engine)
+    assert result.errors == [CustosErrorCode.INVALID_SIGNATURE]
+    assert engine.get_history(passport.agent.id) is None
+
+
+def test_a_boundary_failure_is_recorded_as_a_trust_violation():
+    passport = holder(allowed_actions=["read"])
+    envelope, _ = signed(passport, action=Action.TRADE, amount=5000)
+    engine = TrustEngine()
+    verify(envelope, passport, trust_engine=engine)
+    assert engine.get_history(passport.agent.id).boundary_violations == 1
+
+
+def test_a_successful_verification_records_intent_and_spend():
+    envelope, passport = signed(amount=250)
+    engine = TrustEngine()
+    result = verify(envelope, passport, trust_engine=engine)
+    assert result.passed is True
+    history = engine.get_history(passport.agent.id)
+    assert history.total_intents == 1
+    assert history.successful_intents == 1
+    assert engine.day_total(passport.agent.id) == 250
+
+
+# ---- Phase 2: per-day ledger, wired end to end -----------------------------
+
+
+def test_per_day_limit_blocks_a_later_call_within_the_same_window():
+    passport = holder(monetary_limit_per_day=300.0)
+    engine = TrustEngine()
+
+    first_envelope, _ = signed(passport, amount=200)
+    first = verify(first_envelope, passport, trust_engine=engine)
+    assert first.passed is True
+
+    second_envelope, _ = signed(passport, amount=200)
+    second = verify(second_envelope, passport, trust_engine=engine)
+    assert second.passed is False
+    assert CustosErrorCode.MONETARY_LIMIT_PER_DAY in second.errors
