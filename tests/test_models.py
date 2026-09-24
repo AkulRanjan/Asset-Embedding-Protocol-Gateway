@@ -73,6 +73,28 @@ def test_expires_at_is_required():
         CustosEnvelope(**kwargs)
 
 
+def test_envelope_rejects_a_span_longer_than_the_ttl_ceiling():
+    """`ttl` is bounded 1..86400s, but a hand-built envelope sets `expires_at`
+    directly and bypasses that field entirely — the span itself must still be capped."""
+    issued = now()
+    kwargs = envelope_kwargs(issued_at=issued, expires_at=issued + timedelta(days=3650))
+    with pytest.raises(ValidationError):
+        CustosEnvelope(**kwargs)
+
+
+def test_envelope_rejects_expires_at_before_issued_at():
+    issued = now()
+    kwargs = envelope_kwargs(issued_at=issued, expires_at=issued - timedelta(seconds=1))
+    with pytest.raises(ValidationError):
+        CustosEnvelope(**kwargs)
+
+
+def test_envelope_accepts_a_span_at_exactly_the_ttl_ceiling():
+    issued = now()
+    kwargs = envelope_kwargs(issued_at=issued, expires_at=issued + timedelta(seconds=86400))
+    assert CustosEnvelope(**kwargs).expires_at == issued + timedelta(seconds=86400)
+
+
 def test_envelope_rejects_unknown_fields():
     with pytest.raises(ValidationError):
         CustosEnvelope(**envelope_kwargs(), surprise="x")

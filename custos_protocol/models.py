@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import Any
@@ -13,6 +13,7 @@ from pydantic import (
     ConfigDict,
     Field,
     field_validator,
+    model_validator,
 )
 
 from custos_protocol.errors import CustosErrorCode
@@ -168,6 +169,18 @@ class CustosEnvelope(BaseModel):
     @classmethod
     def _aware(cls, value: datetime) -> datetime:
         return _require_aware(value)
+
+    @model_validator(mode="after")
+    def _bounded_span(self) -> "CustosEnvelope":
+        """`ttl` is bounded 1..86400s, but a hand-built envelope sets `expires_at`
+        directly and bypasses it. Mirror the same ceiling here so a decade-long
+        envelope cannot be constructed."""
+        span = self.expires_at - self.issued_at
+        if span <= timedelta(0):
+            raise ValueError("expires_at must be after issued_at")
+        if span > timedelta(seconds=86400):
+            raise ValueError("expires_at - issued_at must not exceed 86400 seconds")
+        return self
 
 
 class Claim(BaseModel):
