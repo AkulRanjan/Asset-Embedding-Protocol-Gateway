@@ -146,6 +146,12 @@ def check_asset_truth(
         )
 
     # 8. Backing ratio. Exact Decimal arithmetic; the float cast is for reporting only.
+    #
+    # This is a floor check only, by design: a ratio far above the floor (e.g. 10x)
+    # signals an implausible feed exactly as loudly as a ratio below it, but the
+    # 30-code CUSTOS-Exxx taxonomy is fixed (see AGENTS.md) and has no code reserved
+    # for "over-backed". `backing_ratio` is still returned in `scores` so a caller
+    # can apply its own ceiling policy without Custos needing a new error code.
     implied_liability = claim.tokens_outstanding * claim.claimed_nav_per_token
     ratio = float(claim.claimed_backing_usd / implied_liability)
     scores = scores.model_copy(update={
