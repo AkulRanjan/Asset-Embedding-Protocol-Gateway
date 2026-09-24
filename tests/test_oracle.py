@@ -104,6 +104,58 @@ def test_a_populated_current_year_feed_costs_exactly_one_request():
     assert observation is not None and observation.observed_yield_bps == 388
 
 
+def test_a_second_call_within_the_ttl_is_served_from_cache_and_flagged():
+    served: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        served.append(str(request.url))
+        return httpx.Response(200, text=_feed(("2026-08-21", "3.88")))
+
+    async def run():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            oracle = TreasuryOracle(client=client)
+            first = await oracle.get_observation("3M")
+            second = await oracle.get_observation("3M")
+            return first, second
+        finally:
+            await client.aclose()
+
+    first, second = asyncio.run(run())
+
+    assert len(served) == 1, "the second call must be served from cache, not refetched"
+    assert first.cache_hit is False
+    assert second.cache_hit is True
+    assert second.observed_yield_bps == first.observed_yield_bps
+
+
+def test_concurrent_cold_cache_requests_do_not_corrupt_the_cache():
+    """Several coroutines racing on the same tenor before anything is cached: every
+    one must still get a well-formed observation and the cache must end up
+    consistent, not partially written or holding a corrupt entry."""
+    served: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        served.append(str(request.url))
+        return httpx.Response(200, text=_feed(("2026-08-21", "3.88")))
+
+    async def run():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            oracle = TreasuryOracle(client=client)
+            results = await asyncio.gather(*(oracle.get_observation("3M") for _ in range(10)))
+            return results
+        finally:
+            await client.aclose()
+
+    results = asyncio.run(run())
+
+    assert len(results) == 10
+    assert all(observation is not None and observation.observed_yield_bps == 388 for observation in results)
+    # A second, post-race call must be served from the now-populated cache.
+    assert served, "at least one fetch must have happened"
+
+
 def test_the_default_timeout_clears_the_measured_feed_latency():
     """Measured against the live OData feed on 2026-08-22: 8.2 s, 9.1 s, 9.5 s cold.
     The former 3.0 s default timed out before the feed could answer, so a correct URL

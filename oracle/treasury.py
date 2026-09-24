@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime, timezone
 from xml.etree import ElementTree
 
@@ -8,6 +9,8 @@ import httpx
 from custos_protocol.models import Observation
 from oracle.cache import TTLCache
 from oracle.tenors import TENOR_FIELDS
+
+logger = logging.getLogger(__name__)
 
 # Treasury's OData/Atom endpoint for the daily par yield curve. It is intentionally
 # isolated here so a Fiscal Data JSON client can replace it without touching the
@@ -97,11 +100,15 @@ class TreasuryOracle:
         for attempt in range(2):
             try:
                 response = await client.get(url)
-            except httpx.TransportError:
+            except httpx.TransportError as exc:
                 if attempt:
+                    logger.warning("Treasury fetch failed (transport error) url=%s error=%s", url, exc)
                     return None
                 continue
-            return None if response.is_error else response.text
+            if response.is_error:
+                logger.warning("Treasury fetch failed (HTTP %s) url=%s", response.status_code, url)
+                return None
+            return response.text
         return None
 
     async def get_observation(self, tenor: str) -> Observation | None:
@@ -122,9 +129,12 @@ class TreasuryOracle:
                 if body is None:
                     continue
                 parsed = parse_yield_curve(body, field_name)
-                if parsed is not None:
+                if parsed is None:
+                    logger.warning("Treasury feed had no usable %s entries url=%s", field_name, url)
+                else:
                     break
             if parsed is None:
+                logger.warning("Treasury oracle exhausted all candidate URLs for tenor=%s", tenor)
                 return None
             record_date, percent = parsed
             observation = Observation(
@@ -134,7 +144,11 @@ class TreasuryOracle:
             )
             self._cache.set(tenor, observation)
             return observation
-        except (httpx.HTTPError, ElementTree.ParseError):
+        except httpx.HTTPError as exc:
+            logger.warning("Treasury oracle request error tenor=%s error=%s", tenor, exc)
+            return None
+        except ElementTree.ParseError as exc:
+            logger.warning("Treasury oracle received unparseable XML tenor=%s error=%s", tenor, exc)
             return None
         finally:
             if owns_client:
