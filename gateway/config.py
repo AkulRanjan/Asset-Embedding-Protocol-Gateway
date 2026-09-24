@@ -35,3 +35,5 @@ PRIVATE_KEY_PATH = os.getenv("CUSTOS_PRIVATE_KEY")
 # a public key. An empty value is treated as unconfigured and fails closed.
 ADMIN_API_KEY = os.getenv("CUSTOS_ADMIN_API_KEY") or None
 DEMO_MODE = _env("CUSTOS_DEMO_MODE", "").lower() in {"1", "true", "yes"}
+# 0.0 means the Tier 2 trust gate is inert; verify_intent treats any value <= 0 that way.
+MIN_TRUST_SCORE = float(_env("CUSTOS_MIN_TRUST_SCORE", "0.0"))

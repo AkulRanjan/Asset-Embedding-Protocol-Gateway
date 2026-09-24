@@ -18,10 +18,12 @@ from custos_protocol.attestation import RecordSigner
 from custos_protocol.crypto import load_private_key
 from custos_protocol.envelope import envelope_hash
 from custos_protocol.errors import CustosErrorCode, http_status_for
-from custos_protocol.models import CustosEnvelope, VerificationTier
+from custos_protocol.models import AgentHistory, CustosEnvelope, TrustScore, VerificationTier
 from custos_protocol.revocation import RevocationStore, SubjectType
+from custos_protocol.trust import TrustEngine
 from custos_protocol.verification import verify_intent
 from gateway import config
+from gateway.attestations import AttestationRegistry
 from gateway.auth import require_admin
 from gateway.keys import AgentAlreadyRegistered, AgentKeyRegistry
 from gateway.proxy import forward
@@ -42,6 +44,8 @@ oracle = TreasuryOracle(
 )
 revocations = RevocationStore()
 agent_keys = AgentKeyRegistry()
+trust = TrustEngine()
+attestations = AttestationRegistry()
 drift_config = config.load_drift_config()
 def _create_signer() -> RecordSigner:
     if config.PRIVATE_KEY_PATH:
@@ -109,6 +113,87 @@ async def register_agent(registration: AgentRegistration, _: None = Depends(requ
     return {"registered": registration.agent_id}
 
 
+class FrameworkRegistration(BaseModel):
+    framework_id: str
+
+
+@app.post("/v1/frameworks", status_code=201)
+async def register_framework(registration: FrameworkRegistration, _: None = Depends(require_admin)) -> dict:
+    attestations.register_framework(registration.framework_id)
+    return {"registered": registration.framework_id}
+
+
+class AttestationHashRegistration(BaseModel):
+    framework_id: str | None = None
+    build_hash: str | None = None
+    agent_id: str | None = None
+    system_prompt_hash: str | None = None
+
+
+@app.post("/v1/attestations/hashes", status_code=201)
+async def register_attestation_hash(
+    registration: AttestationHashRegistration, _: None = Depends(require_admin),
+) -> dict:
+    registered: dict[str, str] = {}
+    if registration.framework_id and registration.build_hash:
+        attestations.register_build_hash(registration.framework_id, registration.build_hash)
+        registered["build_hash"] = registration.framework_id
+    if registration.agent_id and registration.system_prompt_hash:
+        attestations.register_prompt_hash(registration.agent_id, registration.system_prompt_hash)
+        registered["system_prompt_hash"] = registration.agent_id
+    if not registered:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Supply framework_id and build_hash, and/or agent_id and system_prompt_hash.",
+        )
+    return {"registered": registered}
+
+
+class RevocationRequest(BaseModel):
+    subject_id: str
+    subject_type: SubjectType
+    action: str = "revoke"
+    reason: str = ""
+    duration_seconds: int = 1800
+
+
+@app.post("/v1/revocations", status_code=201)
+async def create_revocation(request: RevocationRequest, _: None = Depends(require_admin)) -> dict:
+    if request.action == "suspend":
+        revocations.suspend(
+            request.subject_id, request.subject_type,
+            duration_seconds=request.duration_seconds, reason=request.reason, revoked_by="admin",
+        )
+    elif request.action == "revoke":
+        revocations.revoke(
+            request.subject_id, request.subject_type, reason=request.reason, revoked_by="admin",
+        )
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="action must be 'revoke' or 'suspend'.",
+        )
+    if request.subject_type is SubjectType.AGENT:
+        trust.record_revocation(request.subject_id)
+    return {"subject_id": request.subject_id, "subject_type": request.subject_type.value,
+            "action": request.action}
+
+
+@app.delete("/v1/revocations/{subject_id}")
+async def delete_revocation(subject_id: str, _: None = Depends(require_admin)) -> dict:
+    if not revocations.reinstate(subject_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active revocation or suspension for that subject.",
+        )
+    return {"reinstated": subject_id}
+
+
+@app.get("/v1/trust/{agent_id}", response_model=None)
+async def get_trust_score(agent_id: str) -> dict:
+    history = trust.get_history(agent_id) or AgentHistory(agent_id=agent_id)
+    return _render(TrustScore(agent_id=agent_id, score=trust.score(agent_id), history=history))
+
+
 async def _resolve(envelope: CustosEnvelope):
     """Returns (claim, observation, tenor_error)."""
     claim = registry.get_claim(envelope.intent.target)
@@ -158,6 +243,10 @@ async def post_intent(envelope: CustosEnvelope, request: Request):
         envelope, public_key,
         claim=claim, observation=observation,
         revocation_store=revocations, drift_config=drift_config,
+        trust_engine=trust, min_trust_score=config.MIN_TRUST_SCORE,
+        registered_frameworks=attestations.frameworks,
+        known_build_hashes=attestations.build_hashes,
+        known_prompt_hashes=attestations.prompt_hashes,
         request_geo=request.headers.get("X-Custos-Geo"),
         clock_skew_seconds=drift_config.clock_skew_seconds,
     )
