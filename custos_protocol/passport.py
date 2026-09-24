@@ -81,20 +81,6 @@ class AgentPassport:
         )
         agent = AgentIdentity(id=agent_id, version=version, attestation=attestation)
 
-        principal = Principal(
-            type=principal_type,
-            id=principal_id,
-            delegation_chain=[
-                DelegationLink(
-                    from_id=principal_id,
-                    to_id=agent_id,
-                    scope="default",
-                    boundary_monotonicity=True,
-                    granted_at=datetime.now(timezone.utc),
-                )
-            ],
-        )
-
         boundaries = Boundaries(
             allowed_actions=allowed_actions or [],
             denied_actions=denied_actions or [],
@@ -105,6 +91,21 @@ class AgentPassport:
             ),
             asset_classes=asset_classes or [],
             geo_restriction=geo_restriction,
+        )
+
+        principal = Principal(
+            type=principal_type,
+            id=principal_id,
+            delegation_chain=[
+                DelegationLink(
+                    from_id=principal_id,
+                    to_id=agent_id,
+                    scope="default",
+                    boundary_monotonicity=True,
+                    boundaries=boundaries,
+                    granted_at=datetime.now(timezone.utc),
+                )
+            ],
         )
 
         return cls(agent, principal, boundaries, public_key, private_key)

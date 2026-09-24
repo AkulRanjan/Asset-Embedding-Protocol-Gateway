@@ -23,12 +23,15 @@ def test_agent_name_defaults_to_random_suffix():
 
 def test_create_ships_a_one_hop_delegation_chain():
     """Every passport is born with a well-formed principal to agent link."""
-    passport = AgentPassport.create(domain="acme.com", agent_name="bot")
+    passport = AgentPassport.create(domain="acme.com", agent_name="bot", allowed_actions=["trade"])
     assert len(passport.principal.delegation_chain) == 1
     link = passport.principal.delegation_chain[0]
     assert link.from_id == "did:web:acme.com"
     assert link.to_id == "did:web:acme.com:agents:bot"
     assert link.boundary_monotonicity is True
+    # The auto-generated hop grants exactly the agent's own cage, so a fresh
+    # passport trivially satisfies delegation monotonicity out of the box.
+    assert link.boundaries == passport.boundaries
 
 
 def test_attestation_method_depends_on_framework_id():
