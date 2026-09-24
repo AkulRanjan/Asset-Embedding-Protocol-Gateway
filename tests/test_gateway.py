@@ -33,6 +33,8 @@ def client(monkeypatch):
     server.registry = server.ClaimRegistry()
     server.revocations = server.RevocationStore()
     server.agent_keys = server.AgentKeyRegistry()
+    server.trust = server.TrustEngine()
+    server.attestations = server.AttestationRegistry()
     return TestClient(server.app)
 
 
@@ -183,6 +185,94 @@ def test_demo_sync_is_absent_unless_demo_mode_is_enabled(client):
     """It rewrites every claim in the registry; it must not be exposed by default."""
     assert client.post("/v1/demo/sync").status_code == 404
     assert "/v1/demo/sync" not in client.get("/openapi.json").json()["paths"]
+
+
+# ---- Phase 2: frameworks, attestation hashes, revocations, trust ----------
+
+
+def test_framework_registration_requires_admin(client):
+    assert client.post("/v1/frameworks", json={"framework_id": "langchain"}).status_code == 401
+
+
+def test_a_registered_framework_passes_the_attestation_check(client, agent, monkeypatch):
+    passport = AgentPassport.create(
+        domain="acme.com", agent_name="framework-bot", framework_id="langchain",
+        allowed_actions=["borrow_against"], monetary_limit_per_txn=100000.0,
+        asset_classes=["treasury"],
+    )
+    client.post("/v1/agents", json={
+        "agent_id": passport.agent.id, "public_key": public_key_to_b64(passport.public_key),
+    }, headers=admin_headers())
+
+    # Unregistered: rejected.
+    blocked = client.post("/v1/intent", json=envelope_json(passport))
+    assert blocked.status_code == 403
+    assert "CUSTOS-E306" in blocked.json()["errors"]
+
+    reg = client.post("/v1/frameworks", json={"framework_id": "langchain"}, headers=admin_headers())
+    assert reg.status_code == 201
+
+    allowed = client.post("/v1/intent", json=envelope_json(passport))
+    assert allowed.status_code == 200
+    assert allowed.json()["verdict"] == "ALLOW"
+
+
+def test_attestation_hash_registration_requires_admin(client):
+    assert client.post("/v1/attestations/hashes", json={
+        "framework_id": "langchain", "build_hash": "abc",
+    }).status_code == 401
+
+
+def test_attestation_hash_registration_requires_a_complete_pair(client):
+    response = client.post(
+        "/v1/attestations/hashes", json={"framework_id": "langchain"}, headers=admin_headers(),
+    )
+    assert response.status_code == 400
+
+
+def test_revocation_route_requires_admin(client):
+    assert client.post("/v1/revocations", json={
+        "subject_id": "did:web:acme.com:agents:bot", "subject_type": "agent",
+    }).status_code == 401
+
+
+def test_revocation_route_blocks_and_reinstate_route_restores(client, agent):
+    revoke = client.post("/v1/revocations", json={
+        "subject_id": agent.agent.id, "subject_type": "agent", "reason": "compromised",
+    }, headers=admin_headers())
+    assert revoke.status_code == 201
+
+    blocked = client.post("/v1/intent", json=envelope_json(agent))
+    assert blocked.status_code == 403
+    assert "CUSTOS-E400" in blocked.json()["errors"]
+
+    reinstate = client.delete(f"/v1/revocations/{agent.agent.id}", headers=admin_headers())
+    assert reinstate.status_code == 200
+
+    restored = client.post("/v1/intent", json=envelope_json(agent))
+    assert restored.status_code == 200
+
+
+def test_reinstating_an_unknown_subject_is_404(client):
+    response = client.delete("/v1/revocations/did:web:nobody.com:agents:x", headers=admin_headers())
+    assert response.status_code == 404
+
+
+def test_trust_score_route_returns_zero_for_an_unknown_agent(client):
+    response = client.get("/v1/trust/did:web:acme.com:agents:unknown")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["score"] == 0.0
+    assert body["history"]["total_intents"] == 0
+
+
+def test_trust_score_route_reflects_recorded_intents(client, agent):
+    client.post("/v1/intent", json=envelope_json(agent))
+    response = client.get(f"/v1/trust/{agent.agent.id}")
+    body = response.json()
+    assert body["history"]["total_intents"] == 1
+    assert body["history"]["successful_intents"] == 1
+    assert body["score"] > 0.0
 
 
 def test_the_configured_oracle_timeout_clears_the_measured_feed_latency(monkeypatch):

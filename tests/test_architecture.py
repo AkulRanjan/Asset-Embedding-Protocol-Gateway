@@ -14,15 +14,14 @@ from custos_protocol.errors import CustosErrorCode
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PROTOCOL = PROJECT_ROOT / "custos_protocol"
 
-# Codes no Phase 1 code path can reach. Each is unreachable because the module or
+# Codes no implemented code path can reach. Each is unreachable because the module or
 # input that would raise it is deferred, not because it is untested by oversight.
 # Anything outside this set is implemented and MUST be exercised by the suite.
-UNREACHABLE_IN_PHASE_1 = {
-    CustosErrorCode.MONETARY_LIMIT_PER_DAY,  # boundary predicate 4 needs the Phase 2 ledger
-    CustosErrorCode.ATTESTATION_MISMATCH,    # verification step 9 is a stub until hashes are plumbed
-    CustosErrorCode.DELEGATION_INVALID,      # delegation.py is Phase 2
-    CustosErrorCode.TRUST_SCORE_LOW,         # trust.py is Phase 2
-}
+#
+# Phase 2 (2026-09-24) landed the trust layer, delegation, the per-day ledger, and real
+# attestation-hash checking, so all four Phase 1 exemptions are gone. Nothing is deferred
+# past Phase 2 today.
+UNREACHABLE_IN_PHASE_1: set[CustosErrorCode] = set()
 
 
 def imported_modules(path: Path) -> set[str]:
