@@ -105,6 +105,26 @@ def test_envelope_rejects_naive_datetimes():
         CustosEnvelope(**envelope_kwargs(issued_at=datetime.now()))
 
 
+def test_time_window_rejects_naive_datetimes():
+    """Without this, a naive time_window crashes boundaries.py's comparison with a
+    raw TypeError instead of a clean validation error."""
+    from custos_protocol.models import TimeWindow
+
+    with pytest.raises(ValidationError):
+        TimeWindow(start=datetime.now(), end=datetime.now() + timedelta(hours=1))
+    with pytest.raises(ValidationError):
+        TimeWindow(start=now(), end=datetime.now() + timedelta(hours=1))
+
+
+def test_delegation_link_rejects_naive_granted_at_and_expires_at():
+    grant = Boundaries()
+    with pytest.raises(ValidationError):
+        DelegationLink(from_id="a", to_id="b", boundaries=grant, granted_at=datetime.now())
+    with pytest.raises(ValidationError):
+        DelegationLink(from_id="a", to_id="b", boundaries=grant, granted_at=now(),
+                       expires_at=datetime.now())
+
+
 def test_ttl_is_bounded():
     with pytest.raises(ValidationError):
         CustosEnvelope(**envelope_kwargs(ttl=0))
@@ -116,12 +136,22 @@ def test_delegation_link_accepts_from_and_to_aliases():
     """`from` is a Python keyword, so the field is from_id with an alias."""
     link = DelegationLink.model_validate(
         {"from": "did:web:acme.com", "to": "did:web:acme.com:agents:bot",
-         "scope": "default", "granted_at": now().isoformat()}
+         "scope": "default", "granted_at": now().isoformat(),
+         "boundaries": Boundaries().model_dump(mode="json")}
     )
     assert link.from_id == "did:web:acme.com"
     assert link.to_id == "did:web:acme.com:agents:bot"
     assert link.boundary_monotonicity is True
     assert link.model_dump(by_alias=True)["from"] == "did:web:acme.com"
+
+
+def test_delegation_link_requires_boundaries():
+    """A link with no boundaries would be a meaningless grant once monotonicity is enforced."""
+    with pytest.raises(ValidationError):
+        DelegationLink.model_validate(
+            {"from": "did:web:acme.com", "to": "did:web:acme.com:agents:bot",
+             "granted_at": now().isoformat()}
+        )
 
 
 def test_monetary_limit_rejects_negatives():

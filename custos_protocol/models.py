@@ -72,6 +72,14 @@ class TimeWindow(BaseModel):
     start: datetime
     end: datetime
 
+    @field_validator("start", "end")
+    @classmethod
+    def _aware(cls, value: datetime) -> datetime:
+        # Without this, a naive datetime here crashes boundaries.py's time-window
+        # check with a raw TypeError (naive vs. aware comparison) instead of a
+        # clean denial — every other datetime in the protocol is aware-UTC-only.
+        return _require_aware(value)
+
 
 class Boundaries(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -89,8 +97,19 @@ class DelegationLink(BaseModel):
     to_id: str = Field(alias="to")
     scope: str = "default"
     boundary_monotonicity: bool = True
+    boundaries: Boundaries
     granted_at: datetime
     expires_at: datetime | None = None
+
+    @field_validator("granted_at")
+    @classmethod
+    def _aware_granted_at(cls, value: datetime) -> datetime:
+        return _require_aware(value)
+
+    @field_validator("expires_at")
+    @classmethod
+    def _aware_expires_at(cls, value: datetime | None) -> datetime | None:
+        return value if value is None else _require_aware(value)
 
 
 class Principal(BaseModel):
@@ -241,3 +260,21 @@ class VerificationResult(BaseModel):
     reference: dict[str, Any] | None = None
     errors: list[CustosErrorCode] = Field(default_factory=list)
     detail: str = ""
+
+
+class AgentHistory(BaseModel):
+    agent_id: str
+    total_intents: int = 0
+    successful_intents: int = 0
+    boundary_violations: int = 0
+    revocation_count: int = 0
+    attestation_changes: int = 0
+    delegation_depth: int = 0
+    first_seen: datetime | None = None
+    last_seen: datetime | None = None
+
+
+class TrustScore(BaseModel):
+    agent_id: str
+    score: float
+    history: AgentHistory
