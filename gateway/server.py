@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from pathlib import Path
 from typing import Any
 
@@ -72,11 +73,21 @@ def _deny(envelope_hash_value: str, agent_id: str, asset_id: str | None,
     return _render(denial, http_status_for(errors[0]))
 
 
+def _field_errors(exc: RequestValidationError) -> str:
+    """Per-field loc/msg, never the submitted value — an error response must not
+    echo back potentially sensitive input."""
+    parts = [
+        f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
+        for error in exc.errors()
+    ]
+    return "; ".join(parts) or "Envelope failed schema validation."
+
+
 @app.exception_handler(RequestValidationError)
 async def _schema_error(_: Request, exc: RequestValidationError) -> JSONResponse:
     denial = signer.sign_denial(
         envelope_hash="", agent_id="", errors=[CustosErrorCode.SCHEMA_INVALID],
-        detail="Envelope failed schema validation.",
+        detail=_field_errors(exc),
     )
     return _render(denial, http_status_for(CustosErrorCode.SCHEMA_INVALID))
 
@@ -110,12 +121,25 @@ async def _resolve(envelope: CustosEnvelope):
     return claim, observation, None
 
 
+def _log_decision(*, started: float, agent_id: str, asset_id: str | None,
+                   tier: str, verdict: str, errors: list[CustosErrorCode]) -> None:
+    latency_ms = (time.monotonic() - started) * 1000
+    logger.info(
+        "intent decision verdict=%s errors=%s agent_id=%s asset_id=%s tier=%s latency_ms=%.2f",
+        verdict, [code.value for code in errors], agent_id, asset_id, tier, latency_ms,
+    )
+
+
 @app.post("/v1/intent", response_model=None)
 async def post_intent(envelope: CustosEnvelope, request: Request):
+    started = time.monotonic()
     digest = envelope_hash(envelope)
+    tier = envelope.verification_tier.value
 
     public_key = agent_keys.get(envelope.agent.id)
     if public_key is None:
+        _log_decision(started=started, agent_id=envelope.agent.id, asset_id=envelope.intent.target,
+                      tier=tier, verdict="BLOCK", errors=[CustosErrorCode.INVALID_SIGNATURE])
         return _deny(digest, envelope.agent.id, envelope.intent.target,
                      [CustosErrorCode.INVALID_SIGNATURE],
                      f"No registered key for agent {envelope.agent.id}; signature cannot be verified.")
@@ -124,6 +148,8 @@ async def post_intent(envelope: CustosEnvelope, request: Request):
     if envelope.verification_tier is not VerificationTier.TIER_0:
         claim, observation, tenor_error = await _resolve(envelope)
         if tenor_error is not None:
+            _log_decision(started=started, agent_id=envelope.agent.id, asset_id=envelope.intent.target,
+                          tier=tier, verdict="BLOCK", errors=[tenor_error])
             return _deny(digest, envelope.agent.id, envelope.intent.target,
                          [tenor_error],
                          f"Tenor {claim.underlying_tenor} has no yield-curve mapping.")
@@ -135,6 +161,9 @@ async def post_intent(envelope: CustosEnvelope, request: Request):
         request_geo=request.headers.get("X-Custos-Geo"),
         clock_skew_seconds=drift_config.clock_skew_seconds,
     )
+    _log_decision(started=started, agent_id=envelope.agent.id, asset_id=envelope.intent.target,
+                  tier=result.tier_used.value, verdict="ALLOW" if result.passed else "BLOCK",
+                  errors=result.errors)
 
     if not result.passed:
         return _deny(digest, envelope.agent.id, envelope.intent.target,

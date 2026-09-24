@@ -89,6 +89,15 @@ def test_malformed_envelope_is_a_structured_400(client):
     assert response.json()["errors"] == ["CUSTOS-E103"]
 
 
+def test_malformed_envelope_detail_names_the_missing_fields_without_echoing_input(client):
+    response = client.post("/v1/intent", json={"agent": {"id": "x"}, "entropy": "s3cr3t-value"})
+    detail = response.json()["detail"]
+    assert "intent" in detail
+    assert "Field required" in detail
+    # Per-field messages must never echo the submitted value back to the caller.
+    assert "s3cr3t-value" not in detail
+
+
 def test_unregistered_agent_cannot_be_verified(client):
     stranger = AgentPassport.create(domain="evil.com", agent_name="bot")
     response = client.post("/v1/intent", json=envelope_json(stranger))
