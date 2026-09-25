@@ -382,3 +382,64 @@ def test_per_day_limit_blocks_a_later_call_within_the_same_window():
     second = verify(second_envelope, passport, trust_engine=engine)
     assert second.passed is False
     assert CustosErrorCode.MONETARY_LIMIT_PER_DAY in second.errors
+
+
+def test_a_reservation_is_released_when_a_later_step_fails():
+    """The per-day budget must not be permanently consumed by a call that passed
+    boundaries but was then blocked downstream (here: a revoked agent)."""
+    passport = holder(monetary_limit_per_day=300.0)
+    engine = TrustEngine()
+    store = RevocationStore()
+    store.revoke(passport.agent.id, SubjectType.AGENT, reason="compromised")
+
+    envelope, _ = signed(passport, amount=200)
+    blocked = verify(envelope, passport, trust_engine=engine, revocation_store=store)
+    assert blocked.passed is False
+    assert CustosErrorCode.AGENT_REVOKED in blocked.errors
+    assert engine.day_total(passport.agent.id) == 0.0
+
+    # The full budget is available again — nothing was permanently consumed.
+    store.reinstate(passport.agent.id)
+    second_envelope, _ = signed(passport, amount=300)
+    assert verify(second_envelope, passport, trust_engine=engine, revocation_store=store).passed is True
+
+
+def test_a_reservation_is_released_when_another_boundary_also_fails():
+    """A monetary reservation that would individually pass must still be released
+    if the same envelope trips a different boundary predicate."""
+    passport = holder(allowed_actions=["read"], monetary_limit_per_day=1000.0)
+    engine = TrustEngine()
+    envelope, _ = signed(passport, action=Action.TRADE, amount=200)  # trade is not allowed
+    result = verify(envelope, passport, trust_engine=engine)
+    assert result.passed is False
+    assert CustosErrorCode.ACTION_NOT_ALLOWED in result.errors
+    assert engine.day_total(passport.agent.id) == 0.0
+
+
+def test_concurrent_requests_for_the_same_agent_never_together_exceed_the_per_day_limit():
+    """End-to-end proof the TOCTOU race is closed: N concurrent verify_intent calls
+    for the same agent, each spending an amount that individually fits, must not
+    collectively exceed per_day even though the check-then-record used to be two
+    separate, non-atomic steps."""
+    import threading
+
+    passport = holder(monetary_limit_per_day=1000.0)
+    engine = TrustEngine()
+    store = RevocationStore()
+    results: list[bool] = []
+    lock = threading.Lock()
+
+    def worker():
+        envelope, _ = signed(passport, amount=100)
+        result = verify(envelope, passport, trust_engine=engine, revocation_store=store)
+        with lock:
+            results.append(result.passed)
+
+    threads = [threading.Thread(target=worker) for _ in range(30)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert results.count(True) == 10
+    assert engine.day_total(passport.agent.id) == 1000
