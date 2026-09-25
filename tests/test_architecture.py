@@ -70,6 +70,14 @@ def test_data_services_never_import_the_http_layer(source):
         assert module.split(".")[0] != "gateway", f"{source.name} imports {module}"
 
 
+def test_observe_never_imports_verification():
+    """observe.py must be structurally incapable of blocking a call, not just
+    incapable by convention — checked by import graph, not by reading the code."""
+    modules = imported_modules(PROTOCOL / "observe.py")
+    assert "custos_protocol.verification" not in modules
+    assert "custos_protocol" not in modules  # a bare `import custos_protocol` could re-expose it
+
+
 def test_superseded_packages_are_gone():
     assert not (PROJECT_ROOT / "models").exists()
     assert not (PROJECT_ROOT / "attest").exists()

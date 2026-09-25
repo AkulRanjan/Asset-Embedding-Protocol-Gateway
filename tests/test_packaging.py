@@ -19,3 +19,10 @@ def test_pyproject_exists_and_declares_pythonpath():
 def test_python_floor_is_310():
     config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert config["project"]["requires-python"] == ">=3.10"
+
+
+def test_console_scripts_declare_both_clis():
+    config = tomllib.loads((PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    scripts = config["project"]["scripts"]
+    assert scripts["custos"] == "custos_protocol.cli:cli"
+    assert scripts["custos-admin"] == "gateway.admin_cli:cli"
