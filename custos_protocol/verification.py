@@ -139,9 +139,16 @@ def verify_intent(
     trust.record_attestation(agent_id, attestation_in.build_hash, attestation_in.system_prompt_hash, now=now)
     trust.record_delegation_depth(agent_id, len(envelope.principal.delegation_chain), now=now)
 
+    # Any amount for this request is reserved against the per-day ledger the
+    # moment boundaries pass below, and held until the pipeline either succeeds
+    # (kept) or fails later (released by fail_authenticated) — never recorded
+    # eagerly on a request that never executes, never lost on a request that does.
+    ledger_token: str | None = None
+
     def fail_authenticated(step: str, codes: list[CustosErrorCode], detail: str,
                             *, scores: AssetScores | None = None,
                             reference: dict | None = None) -> VerificationResult:
+        trust.release_amount(agent_id, ledger_token, now=now)
         trust.record_intent(agent_id, success=False, now=now)
         return fail(step, codes, detail, scores=scores, reference=reference)
 
@@ -157,11 +164,19 @@ def verify_intent(
                     "Envelope nonce has already been used.")
     checks["replay"] = CheckOutcome.PASSED
 
-    # 6. Boundaries — accumulates every violation. Predicate 4 (per-day limit) needs
-    # the amount already spent in the trailing 24h; boundaries.py stays pure, so the
-    # ledger lookup happens here.
-    day_total = trust.day_total(agent_id, now=now)
-    violations = check_boundaries(envelope, claim, request_geo=request_geo, now=now, day_total=day_total)
+    # 6. Boundaries — accumulates every violation. Predicate 4 (per-day limit)
+    # needs the amount already spent in the trailing 24h; boundaries.py stays
+    # pure, so the ledger check happens here — atomically, via reserve_amount,
+    # so two concurrent requests for the same agent can never both pass a
+    # day_total read that is already stale by the time either one acts on it.
+    amount = _numeric(envelope.intent.parameters.get("amount"))
+    if amount is not None:
+        ledger_token, day_total_before = trust.reserve_amount(
+            agent_id, amount, envelope.boundaries.monetary_limit.per_day, now=now,
+        )
+    else:
+        day_total_before = trust.day_total(agent_id, now=now)
+    violations = check_boundaries(envelope, claim, request_geo=request_geo, now=now, day_total=day_total_before)
     if violations:
         trust.record_violation(agent_id, now=now)
         return fail_authenticated("boundaries", violations,
@@ -183,10 +198,8 @@ def verify_intent(
     checks["revocation"] = CheckOutcome.PASSED
 
     def succeed(scores: AssetScores | None, reference: dict | None) -> VerificationResult:
+        # Any amount was already reserved atomically at step 6; nothing more to record.
         trust.record_intent(agent_id, success=True, now=now)
-        amount = _numeric(envelope.intent.parameters.get("amount"))
-        if amount is not None:
-            trust.record_amount(agent_id, amount, now=now)
         return VerificationResult(
             passed=True, checks=checks, tier_used=tier, errors=[],
             detail=f"{tier.value} verification passed.",

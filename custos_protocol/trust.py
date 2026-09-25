@@ -10,6 +10,7 @@ stays a pure function — the ledger lookup happens in verification.py).
 from __future__ import annotations
 
 import threading
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -52,7 +53,7 @@ def _score(history: _MutableHistory) -> float:
 class TrustEngine:
     def __init__(self) -> None:
         self._history: dict[str, _MutableHistory] = {}
-        self._ledger: dict[str, list[tuple[datetime, float]]] = {}
+        self._ledger: dict[str, dict[str, tuple[datetime, float]]] = {}
         self._lock = threading.Lock()
 
     def _get_or_create(self, agent_id: str, now: datetime) -> _MutableHistory:
@@ -147,36 +148,78 @@ class TrustEngine:
             )
 
     # ---- per-day monetary ledger ----------------------------------------
+    #
+    # Reservation-based, to close a TOCTOU race: a plain "read day_total, decide,
+    # write later" pattern lets two truly concurrent requests for the same agent
+    # both read the same total, both pass predicate 4, and together exceed
+    # per_day. reserve_amount() checks-and-reserves under one lock acquisition;
+    # release_amount() undoes a reservation whose surrounding request later
+    # failed for an unrelated reason, so budget is never permanently consumed by
+    # a call that never executed.
 
-    def _prune(self, agent_id: str, now: datetime) -> list[tuple[datetime, float]]:
-        entries = self._ledger.get(agent_id, [])
+    def _prune_locked(self, agent_id: str, now: datetime) -> dict[str, tuple[datetime, float]]:
+        entries = self._ledger.get(agent_id)
+        if not entries:
+            return {}
         cutoff = now - _DAY
-        fresh = [entry for entry in entries if entry[0] > cutoff]
+        fresh = {token: entry for token, entry in entries.items() if entry[0] > cutoff}
         if fresh:
             self._ledger[agent_id] = fresh
         else:
             self._ledger.pop(agent_id, None)
         return fresh
 
-    # NOTE — known limitation, not fixed here: verification.py reads day_total()
-    # during the boundaries check and only calls record_amount() later, once the
-    # whole pipeline succeeds. Each individual call is thread-safe (see
-    # test_concurrent_record_amount_calls_do_not_lose_updates), but the read and the
-    # later write are not one atomic operation, so two truly concurrent requests
-    # for the same agent can both read the same day_total, both pass predicate 4,
-    # and together exceed per_day. Closing this needs a reserve/commit/release
-    # protocol (reserve on the boundaries check, release on any later failure so a
-    # request that never executes doesn't permanently consume budget) — real scope,
-    # not a one-line fix, so it is documented here rather than half-done.
     def day_total(self, agent_id: str, *, now: datetime | None = None) -> float:
         now = now or datetime.now(timezone.utc)
         with self._lock:
-            entries = self._prune(agent_id, now)
-            return sum(amount for _, amount in entries)
+            entries = self._prune_locked(agent_id, now)
+            return sum(amount for _, amount in entries.values())
 
-    def record_amount(self, agent_id: str, amount: float, *, now: datetime | None = None) -> None:
+    def record_amount(self, agent_id: str, amount: float, *, now: datetime | None = None) -> str:
+        """Unconditional reservation — records `amount` with no limit check.
+        Returns the token, releasable like any other reservation."""
         now = now or datetime.now(timezone.utc)
         with self._lock:
-            entries = self._prune(agent_id, now)
-            entries.append((now, amount))
+            entries = self._prune_locked(agent_id, now)
+            token = uuid.uuid4().hex
+            entries[token] = (now, amount)
             self._ledger[agent_id] = entries
+            return token
+
+    def reserve_amount(
+        self, agent_id: str, amount: float, per_day_limit: float, *, now: datetime | None = None,
+    ) -> tuple[str | None, float]:
+        """Atomically check `day_total + amount` against `per_day_limit` (<= 0
+        means no limit) and, if within it, reserve `amount` under the same lock
+        acquisition as the check.
+
+        Returns `(token, day_total_before)`. `token` is `None` when the
+        reservation was rejected; `day_total_before` is always the total
+        *before* this call — the caller feeds it straight into
+        `check_boundaries()` so the atomic decision here and the reported
+        violation are computed from the exact same numbers, never a second,
+        separately-read total.
+        """
+        now = now or datetime.now(timezone.utc)
+        with self._lock:
+            entries = self._prune_locked(agent_id, now)
+            day_total_before = sum(amt for _, amt in entries.values())
+            if per_day_limit > 0 and day_total_before + amount > per_day_limit:
+                return None, day_total_before
+            token = uuid.uuid4().hex
+            entries[token] = (now, amount)
+            self._ledger[agent_id] = entries
+            return token, day_total_before
+
+    def release_amount(self, agent_id: str, token: str | None, *, now: datetime | None = None) -> None:
+        """Undo a reservation whose surrounding request did not ultimately
+        succeed. A `None` token is a no-op, so callers can release
+        unconditionally without checking first."""
+        if token is None:
+            return
+        with self._lock:
+            entries = self._ledger.get(agent_id)
+            if entries and token in entries:
+                del entries[token]
+                if not entries:
+                    self._ledger.pop(agent_id, None)
