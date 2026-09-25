@@ -1,0 +1,5403 @@
+{
+  "_meta": {
+    "spec_version": "custos-conformance/1.0.0",
+    "generated_at": "2026-09-25T12:00:00+00:00",
+    "t_now": "2026-09-25T12:00:00+00:00",
+    "t_expired": "2020-01-01T00:00:00+00:00",
+    "vector_count": 50,
+    "keys": {
+      "agent_1": {
+        "seed_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "public_key_b64": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g="
+      },
+      "agent_2": {
+        "seed_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "public_key_b64": "fVnFYj3UCnSqTVoyrGRdOz-V2urkwiviVHbdakhvc4I="
+      },
+      "hmac": {
+        "key_hex": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      }
+    },
+    "excluded_codes": {
+      "CUSTOS-E304": "gateway/oracle integration concern (tenor-to-observation mapping); never emitted by custos_protocol.verify_intent",
+      "CUSTOS-E502": "gateway downstream-forwarding concern; never emitted by verify_intent"
+    }
+  },
+  "vectors": [
+    {
+      "id": "A01",
+      "category": "envelope validity",
+      "description": "A healthy Tier 0 envelope passes.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "TKN-UST-3M-001",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000001",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "vZe-hgslS5_sOY_1uM3NrgcvWWITlpZS7z3-pg9SuBUr3N9U-E0-mCoiYf3i5sExAlVQ4710b1e46Dn4soYpBg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_0",
+        "errors": []
+      }
+    },
+    {
+      "id": "A02",
+      "category": "envelope validity",
+      "description": "An expired envelope is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000002",
+        "ttl": 300,
+        "issued_at": "2020-01-01T00:00:00Z",
+        "expires_at": "2020-01-01T00:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "yICSPcxv2ZB2tZ-ca_VhDy_ZF6H94_pnBNBYc6iM1nhZM0jwTNcOmxsYAIv9AxE1sgLuV3vKYPUGrIy-MLaYCA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E101"
+        ]
+      }
+    },
+    {
+      "id": "A03",
+      "category": "envelope validity",
+      "description": "An unsupported protocol version is rejected before anything else.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "9.9.9",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000003",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "VWSXlpWzEbQa4PNjwrGrQNViAhkMqsxTvwK0xdrAqcJPp49qVltxPPz060Rh-jaZ6dm1rxhBJkJB9Qa491ueCg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E104"
+        ]
+      }
+    },
+    {
+      "id": "A04",
+      "category": "envelope validity",
+      "description": "A malformed nonce (not matching nonce:<32 hex>) is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "not-a-nonce",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "WclgM47eHFtDHfKuDPEX1keghlupe_bxArrK9qXLf_TRR4JP2GTIeF4AJ1hFY_UNIh0qaUnfmqF4E5Al7TRgAw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E105"
+        ]
+      }
+    },
+    {
+      "id": "A05",
+      "category": "envelope validity",
+      "description": "issued_at more than 5 minutes in the future is a clock-skew rejection.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000004",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:10:00Z",
+        "expires_at": "2026-09-25T12:20:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "IxO9JYyp7nKW23gvFDK4FTH_pb6TPzELCgHQ_69FScvoAYB2MvXm6V2xfA2h-6UGA6u2uVYdiNyaZITPC0mhAQ=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E106"
+        ]
+      }
+    },
+    {
+      "id": "D01",
+      "category": "schema",
+      "description": "An empty agent id fails the semantic schema check.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000005",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "R1VD6YU6VEIfVO7PRtMxyNLwdbx7RLrGxNC0WDUk7L4woWCpjXHTy3oY4nb-guqPnwf0S_XYcl5bVSRQo_bjBw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E103"
+        ]
+      }
+    },
+    {
+      "id": "B01",
+      "category": "signature",
+      "description": "A valid Ed25519 signature verifies.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000006",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "Njh5sRGqO2u4qm6saAd_ict8kMDzn_NEiFQ-Q1yUAyK5HvUHxL6xXtTNPpgH0WldFidlhw0rK9_xjkXbbKJiBA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_0",
+        "errors": []
+      }
+    },
+    {
+      "id": "B02",
+      "category": "signature",
+      "description": "Verifying against the wrong public key fails.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000007",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "QZ0P90EyiLBzECkIbFgTAGUZAgxYYCDh8wDHRPyyIvBjbFKZGOo3EcwWJ13GPBnipEQKCZGOLtx_EZsr7BhiBw=="
+        }
+      },
+      "verify_public_key": "fVnFYj3UCnSqTVoyrGRdOz-V2urkwiviVHbdakhvc4I=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E100"
+        ]
+      }
+    },
+    {
+      "id": "B03",
+      "category": "signature",
+      "description": "A tampered payload (post-signing) fails signature verification.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "tampered",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000008",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "vinq7JKc-IFMMrDmNdcUMGmhJqK_xiMd5FBn08NUk5QoDBJ9IiPwUaJSQGjsz3_GkL-2CFR1OnvPJCMnaFM4BA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E100"
+        ]
+      }
+    },
+    {
+      "id": "B04",
+      "category": "signature",
+      "description": "A valid HMAC signature verifies at Tier 0.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000009",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "hmac",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "jaOOaqRrfBq2gap49l9Yqo26yXQL-lDNleuKlL3xVPo="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_0",
+        "errors": []
+      }
+    },
+    {
+      "id": "C01",
+      "category": "replay",
+      "description": "A fresh nonce is accepted.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:0000000000000000000000000000000a",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "HnpSPawLkwuD2UEXlH-swhF2NeoJKjdRY9H4d75vwHWZ4ob8n5GqTe6JI0HLxmV_fcPTO6K6IJgahH7oiDLtDw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_0",
+        "errors": []
+      }
+    },
+    {
+      "id": "C02",
+      "category": "replay",
+      "description": "The same nonce used twice is rejected the second time.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:0000000000000000000000000000000b",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "Gl9c5wZE62auo9en7PcMyjjYhiNRbAcf1JXDYb2FLBDC3fv1HIo7sqKU_pWnAQ5MKDBDeepNKD3IQ5PBhM7fAA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": true,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E102"
+        ]
+      }
+    },
+    {
+      "id": "E01",
+      "category": "boundary",
+      "description": "A permitted trade within every limit passes (through Tier 1 asset truth).",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000000c",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "qTfGsVAGlU7qk_XFUlX1V0qxuAGstlezXN4A9V6ELj4qZFp7HpMZOzPjy-X_QZvJuVKVxeLIc2FvJzIZErNTCw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_1",
+        "errors": []
+      }
+    },
+    {
+      "id": "E02",
+      "category": "boundary",
+      "description": "An action absent from a non-empty allowlist is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "borrow_against",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000000d",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "dx0439Affj5x8EbgO5pekqk_-2fI2QtkfWlc7uetb37iEVhd4sskug4J-Dmkr9DfXof8QQNLwLxpwv4wcdWOBg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E200"
+        ]
+      }
+    },
+    {
+      "id": "E03",
+      "category": "boundary",
+      "description": "A denied action is rejected even if also allowed elsewhere.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "redeem",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000000e",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "5GDGSyeE5fD0AsD2_Cz4MfPknkfONDNUdhKmWZn_J1c_Oy-C9t7_fFJEG-iUZvC55RK_lJTt_R-Tn-tK9y0gCg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E201"
+        ]
+      }
+    },
+    {
+      "id": "E04",
+      "category": "boundary",
+      "description": "An amount over the per-transaction limit is rejected (1500 > 1000, but still under the 2000 per-day limit, isolating this to E202).",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 1500
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000000f",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "IN0gVzI09wa7eu8nGfcrMaTSCOxhFnJOS8LA26e96-TBULS6E2wuHIhX0S4TZUUVgRGZpFktq59e_nOmkitxCw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E202"
+        ]
+      }
+    },
+    {
+      "id": "E05",
+      "category": "boundary",
+      "description": "An amount that would exceed the rolling per-day limit is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 600
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000010",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "GQ_9W4mQXhv3NAHGQDgyqzcqXrjO3yWI6WFyO11PYQhzQcwujYzowZxFs-43PCnXxZsDjokYp655KxP40J70Bw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": 1500,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E203"
+        ]
+      }
+    },
+    {
+      "id": "E06",
+      "category": "boundary",
+      "description": "A request outside the agent's time window is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader2",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader2",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": {
+                  "start": "2026-09-25T09:00:00Z",
+                  "end": "2026-09-25T10:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": {
+            "start": "2026-09-25T09:00:00Z",
+            "end": "2026-09-25T10:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000011",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "AolHLcM7Y3RPACjOLwvf5EK1-eNQybNgl4DkPD1VVYhngVtbSbQzlmQTbTi_tV2PmHiFzdLxYIBxQo2_MfUdDw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E204"
+        ]
+      }
+    },
+    {
+      "id": "E07",
+      "category": "boundary",
+      "description": "A request from outside the agent's permitted geography is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000012",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "TGcuAHCseETpZYDnnXAhsK_gqJEJBpJpqARIRypWu3Ba53Ar1YJ9k_XY00MzAmGmU9bLWvMuvOquxnYbXqJ9Dw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "request_geo": "RU",
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E205"
+        ]
+      }
+    },
+    {
+      "id": "E08",
+      "category": "boundary",
+      "description": "An asset class outside the permitted set is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000013",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "bWSZ6ggwTKmiSWC8bJkZgU5BrUnvgYD9nRmAzq01_zOpKhrhrrSLpdJWYI3lA2zXeXQa3wzUt3cCf8lhX3lcCQ=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "corporate_credit",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E206"
+        ]
+      }
+    },
+    {
+      "id": "F01",
+      "category": "revocation",
+      "description": "A clean, unrevoked agent passes.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000014",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "ZLMFI-FNGjlGeu8rXeTjxVZMPENjARjEubWxCyZSkQT6IO8E8ZY3YQTo7bsEZkQ4cbS1E3-6qJQ18aqamL8RDA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_0",
+        "errors": []
+      }
+    },
+    {
+      "id": "F02",
+      "category": "revocation",
+      "description": "A revoked agent is blocked.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000015",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "b36d-AkXjOC6crYTtEtPe-sdXPJyWbWXQfO5gL--ZEk8YGYlqKC450L6l-3sCO-SCSQnoTX9nkgHtv2ruKJeCg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [
+        {
+          "subject_id": "did:web:acme.com:agents:trader",
+          "subject_type": "agent",
+          "action": "revoke"
+        }
+      ],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E400"
+        ]
+      }
+    },
+    {
+      "id": "F03",
+      "category": "revocation",
+      "description": "A revoked agent is blocked even at Tier 0 \u2014 the kill switch is not tier-gated.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000016",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "mVloxemjG0xqRgar0TLbY9AFEpioLS3o1F0dQUf21FrkUVnxZvhAqbRyAfwbzAUN8le87engNevdBqJ1NkvuBA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [
+        {
+          "subject_id": "did:web:acme.com:agents:bot",
+          "subject_type": "agent",
+          "action": "revoke"
+        }
+      ],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E400"
+        ]
+      }
+    },
+    {
+      "id": "F04",
+      "category": "revocation",
+      "description": "A suspended agent reports its own code.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000017",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "npv_tPckqcJXYVf4EMLFk7QCd5M7EHZ3E6J97XYoMzMLhjxRBHB8yPmRbULcCsY5a677mcoM4Emj5bTZgsAjDA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [
+        {
+          "subject_id": "did:web:acme.com:agents:bot",
+          "subject_type": "agent",
+          "action": "suspend",
+          "duration_seconds": 1800
+        }
+      ],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E401"
+        ]
+      }
+    },
+    {
+      "id": "F05",
+      "category": "revocation",
+      "description": "A revoked issuer blocks the transaction.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000018",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "XbfvY3t3mG7T7QzOWiTopj0qKUmtjmjZaUAmi7DVPVSgNL2rN9MbINfBaP9k2rRWfQw32dE2MRjhtHcGO2q7Cw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [
+        {
+          "subject_id": "Meridian",
+          "subject_type": "issuer",
+          "action": "revoke"
+        }
+      ],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E402"
+        ]
+      }
+    },
+    {
+      "id": "F06",
+      "category": "revocation",
+      "description": "A non-local revocation store that hasn't synced within the staleness budget fails closed rather than reporting not-revoked. Custos's highest-severity divergence from the reference implementation, which fails open here. The one vector in this suite that is not purely data-driven: staleness is measured against the real wall clock (an operational concern, unlike envelope timestamps), so the runner must sleep past requires_sleep_ms before verifying, exactly as tests/test_verification.py does for the same check.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000019",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "z64Wb0iYlXLO064d2Khsj2qRCTwVmampfaHvDou0KmyqumOVYwpYwcDTmcq1WbmuvrbRjFmOnexjlQCDi8k_AA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "revocation_local_only": false,
+      "max_revocation_staleness_ms": 1,
+      "requires_sleep_ms": 20,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_0",
+        "errors": [
+          "CUSTOS-E405"
+        ]
+      }
+    },
+    {
+      "id": "G01",
+      "category": "asset truth",
+      "description": "An unknown asset (no claim) is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "NOPE",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000001a",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "ErJP7sHwHfTDIRZ9My-XThk5LEiZr-Jpln5pTs-V3c-KoX9NsQZ9p-zlZo3__A4_9V6ETCbpmHmnyFjwOQrFCg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": null,
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E303"
+        ]
+      }
+    },
+    {
+      "id": "G02",
+      "category": "asset truth",
+      "description": "A known asset with no market observation fails closed.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000001b",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "-rD8ki9PlauYBoGIzmd9mLO8d8lPz1tgysgljNb1vZo5IpSOBWbVvm5QYj_CvILZsFXjkoVbes9ZPwCHkleaAQ=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": null,
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E500"
+        ]
+      }
+    },
+    {
+      "id": "G03",
+      "category": "asset truth",
+      "description": "An observation older than the maximum age is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000001c",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "uZk7q_3-bVo-UpBGGKfS7NJa1JFq5qSmIaUIfs4RV3YoDuvZz0pgf7jkVZbwnW5CnoX2PnVviJGlfv4CvT43Aw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-15",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E501"
+        ]
+      }
+    },
+    {
+      "id": "G04",
+      "category": "asset truth",
+      "description": "A claim attested in the future is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000001d",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "Zdpz82uXenY8sQoMSHyZaul_85phFzFXK9ynIJSDtFVbxm7oKaOolugBTGfNdzrajDfbMgCqBDN3FlYD3DJADg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T13:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E305"
+        ]
+      }
+    },
+    {
+      "id": "G05",
+      "category": "asset truth",
+      "description": "A stale claim (older than the staleness threshold) is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000001e",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "--hX6E_M06_5P5ST-RFPBCeJBQcW4WdgNbMDB2Dfpo7uKzlFkBijfuDtAIjE6amqywjaZUPXeKPfAyNKfFvgCg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-23T12:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E300"
+        ]
+      }
+    },
+    {
+      "id": "G06",
+      "category": "asset truth",
+      "description": "A negative observed yield is impossible market data.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000001f",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "kfPv6Az2g6SRB-tj2KmRnDudKUifUM1NVnffM7hqcK0iEYlry6nqzgFk2AVZ0JMWWgmULwzYKLLPH-P3L8O1Bg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": -5,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E501"
+        ]
+      }
+    },
+    {
+      "id": "G07",
+      "category": "asset truth",
+      "description": "A claimed yield diverging beyond the relative threshold is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000020",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "4jGSCHTZa4itZfoB1aCPGtGjDGi3GNhwQSHJ0bIUemAe4Ql3TfMh8z_2bUy3B2uIys0FW3UmtkVLv3FVGzJwBw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 360,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E301"
+        ]
+      }
+    },
+    {
+      "id": "G08",
+      "category": "asset truth",
+      "description": "A backing ratio below the floor is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000021",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "S6_ibPqISJs1IG_vGaiwyW17_TucBx4L3tx_VJVJK7FMU1QnF_poo7h0aF7UVv8l3kPc8m8SIx7atudEdz_MBQ=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "50",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E302"
+        ]
+      }
+    },
+    {
+      "id": "G09",
+      "category": "asset truth",
+      "description": "At a genuine 0.00% print, a small claimed yield within absolute tolerance passes.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:trader",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:trader",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [
+                  "redeem"
+                ],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 2000.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [
+                  "treasury"
+                ],
+                "geo_restriction": "US,CA",
+                "time_window": {
+                  "start": "2026-09-25T11:00:00Z",
+                  "end": "2026-09-25T13:00:00Z"
+                }
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [
+            "redeem"
+          ],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 2000.0,
+            "currency": "USD"
+          },
+          "asset_classes": [
+            "treasury"
+          ],
+          "geo_restriction": "US,CA",
+          "time_window": {
+            "start": "2026-09-25T11:00:00Z",
+            "end": "2026-09-25T13:00:00Z"
+          }
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000022",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "CrapWrvqdAqxVRbsozKK8t-ztpcn1m7frtIlQLTGFks3iU9jXHmP3h_F-W32sbA-eNQsnXbKrFXpJ9Zqg_EzBw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 5,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 0,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_1",
+        "errors": []
+      }
+    },
+    {
+      "id": "H01",
+      "category": "delegation",
+      "description": "A valid two-hop delegation chain with correct monotonicity passes.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:leaf",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:mid",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-23T12:00:00Z",
+              "expires_at": null
+            },
+            {
+              "from": "did:web:acme.com:agents:mid",
+              "to": "did:web:acme.com:agents:leaf",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 500.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 500.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_2",
+        "entropy": "nonce:00000000000000000000000000000023",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "4jwE69o2MzfjbH59fDNDsxdZEgP_Psi5jCIsHRyocvGBoHwf7h9heorcU-2JZeIejhiW9MATO0Zo-zCj4RdzAw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_2",
+        "errors": []
+      }
+    },
+    {
+      "id": "H02",
+      "category": "delegation",
+      "description": "A discontinuous chain is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:leaf",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:mid",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-23T12:00:00Z",
+              "expires_at": null
+            },
+            {
+              "from": "did:web:acme.com:agents:someone-else",
+              "to": "did:web:acme.com:agents:leaf",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 500.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 500.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_2",
+        "entropy": "nonce:00000000000000000000000000000024",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "FUIWBQUoddQ02SgOx2Iu8ONC2Hd9XRXJxXQij1sUkCOm2e0v_XbqAB9OaSbcwxU0isDl5A_2CK9wMEkYt0AAAA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_2",
+        "errors": [
+          "CUSTOS-E403"
+        ]
+      }
+    },
+    {
+      "id": "H03",
+      "category": "delegation",
+      "description": "An expired delegation hop is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:leaf",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:mid",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-23T12:00:00Z",
+              "expires_at": null
+            },
+            {
+              "from": "did:web:acme.com:agents:mid",
+              "to": "did:web:acme.com:agents:leaf",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 500.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": "2026-09-25T11:00:00Z"
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 500.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_2",
+        "entropy": "nonce:00000000000000000000000000000025",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "9feztliZRwVs1wjKDOME54ckwPoWU0EXxnhPFnjxz_Y6VxeSyx6pBKzhPdC91Jbv3Mi0uKBtdLE6SUru42_sBw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_2",
+        "errors": [
+          "CUSTOS-E403"
+        ]
+      }
+    },
+    {
+      "id": "H04",
+      "category": "delegation",
+      "description": "A hop widening its authority beyond its delegator is rejected (real boundary monotonicity).",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:leaf",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:mid",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-23T12:00:00Z",
+              "expires_at": null
+            },
+            {
+              "from": "did:web:acme.com:agents:mid",
+              "to": "did:web:acme.com:agents:leaf",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade",
+                  "redeem"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade",
+            "redeem"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 1000.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_2",
+        "entropy": "nonce:00000000000000000000000000000026",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "2esnQQU-bi7J0Jqj_Mlejwvqy9X2NIEAhwOTRhChLbFqsa-_rnEphab-Lp0ZIIiNXmQb3jGwyzMJ70D0pOYeBw=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_2",
+        "errors": [
+          "CUSTOS-E403"
+        ]
+      }
+    },
+    {
+      "id": "I01",
+      "category": "trust",
+      "description": "min_trust_score at the default of 0.0 never gates.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:leaf",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:mid",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-23T12:00:00Z",
+              "expires_at": null
+            },
+            {
+              "from": "did:web:acme.com:agents:mid",
+              "to": "did:web:acme.com:agents:leaf",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 500.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 500.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_2",
+        "entropy": "nonce:00000000000000000000000000000027",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "1np4xKxElfvRFWjnas0Tq5mJCWSePkD05wEng0R__O47eQ7WBQVBLcY5aADLjYV3iKTWxaWW0H95ewxNlPAaAQ=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_2",
+        "errors": []
+      }
+    },
+    {
+      "id": "I02",
+      "category": "trust",
+      "description": "A fresh agent (trust score 0.0) fails a configured minimum threshold.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:leaf",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:mid",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 1000.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-23T12:00:00Z",
+              "expires_at": null
+            },
+            {
+              "from": "did:web:acme.com:agents:mid",
+              "to": "did:web:acme.com:agents:leaf",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "trade"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 500.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "trade",
+          "target": "TKN-UST-3M-001",
+          "parameters": {
+            "amount": 100
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "trade"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 500.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_2",
+        "entropy": "nonce:00000000000000000000000000000028",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "uS_rWj0cokA1QE7nwN4JRS-D-WWZtIrNqWkUM7tTy8JlaN5v090q8-ipNECML1WkWRJ66BfTF6jkkGSQXYYSBA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.5,
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_2",
+        "errors": [
+          "CUSTOS-E404"
+        ]
+      }
+    },
+    {
+      "id": "J01",
+      "category": "attestation",
+      "description": "With no known-hash maps supplied, attestation is opt-in and trivially passes.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:framework-bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "framework_registry",
+            "framework_id": "langchain",
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:framework-bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000029",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "RlyxC6BdHTwTi1MUoXBMeRdF2cIh6NzPvHTJxaKZl1AKieuIaH-78R0Zuu99IOyqtQ7Onv9mbnxncUnmnx5iBg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "expected": {
+        "passed": true,
+        "tier_used": "tier_1",
+        "errors": []
+      }
+    },
+    {
+      "id": "J02",
+      "category": "attestation",
+      "description": "An unregistered framework is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:framework-bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "framework_registry",
+            "framework_id": "langchain",
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:framework-bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:00000000000000000000000000000029",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "RlyxC6BdHTwTi1MUoXBMeRdF2cIh6NzPvHTJxaKZl1AKieuIaH-78R0Zuu99IOyqtQ7Onv9mbnxncUnmnx5iBg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "registered_frameworks": [
+        "crewai"
+      ],
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E306"
+        ]
+      }
+    },
+    {
+      "id": "J03",
+      "category": "attestation",
+      "description": "A build_hash mismatch against the registered framework hash is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:framework-bot2",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "framework_registry",
+            "framework_id": "langchain",
+            "build_hash": "actual-hash",
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:framework-bot2",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000002a",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "6Cj__YYQCzq-dPSuiykC7I8vcrzxoyIhvxlLMApdRTb7PvGCez-LY5wDQ7bilejAWXPCm0_IkpWBi_bHKedDBg=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "known_build_hashes": {
+        "langchain": "expected-hash"
+      },
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E306"
+        ]
+      }
+    },
+    {
+      "id": "J04",
+      "category": "attestation",
+      "description": "A system_prompt_hash mismatch against the registered hash is rejected.",
+      "envelope": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:prompt-bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": "actual-prompt",
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:prompt-bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {}
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_1",
+        "entropy": "nonce:0000000000000000000000000000002b",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "XsASotO2eVqjtwEiWBPDcAeIV1Iz0P7FQFq6B5Aw6ZNg5TlYytRSdWGgQpGjHRdFDS6GgUi_DSndqC8QiQfCAA=="
+        }
+      },
+      "verify_public_key": "5zTqbCtiV95yNV5HKqBaTEh-a0Y8Ap7TBt8vAbVja1g=",
+      "claim": {
+        "asset_id": "TKN-UST-3M-001",
+        "issuer": "Meridian",
+        "underlying_tenor": "3M",
+        "asset_class": "treasury",
+        "claimed_nav_per_token": "1",
+        "claimed_backing_usd": "100",
+        "tokens_outstanding": "100",
+        "claimed_yield_bps": 400,
+        "last_attested_at": "2026-09-25T11:00:00Z",
+        "chain": "ethereum",
+        "contract_address": "0x1"
+      },
+      "observation": {
+        "source": "conformance",
+        "dataset": "daily_treasury_yield_curve",
+        "tenor": "3M",
+        "observed_yield_bps": 400,
+        "record_date": "2026-09-25",
+        "fetched_at": "2026-09-25T12:00:00Z",
+        "cache_hit": false
+      },
+      "now": "2026-09-25T12:00:00+00:00",
+      "revocations": [],
+      "hmac_key": null,
+      "verify_twice": false,
+      "day_total_seed": null,
+      "min_trust_score": 0.0,
+      "known_prompt_hashes": {
+        "did:web:acme.com:agents:prompt-bot": "expected-prompt"
+      },
+      "expected": {
+        "passed": false,
+        "tier_used": "tier_1",
+        "errors": [
+          "CUSTOS-E306"
+        ]
+      }
+    },
+    {
+      "id": "K01",
+      "category": "serialization",
+      "description": "Byte-exact canonical payload of a full envelope: whole floats become ints, keys sorted recursively (@ sorts first), no whitespace, Z-suffixed datetime, nulls present, proof excluded.",
+      "payload_input": {
+        "@context": "https://custos.protocol/v1",
+        "@type": "CustosEnvelope",
+        "protocol_version": "1.0.0",
+        "agent": {
+          "id": "did:web:acme.com:agents:bot",
+          "version": "1.0.0",
+          "runtime": "custos-sdk/1.0.0",
+          "attestation": {
+            "method": "self_reported",
+            "framework_id": null,
+            "build_hash": null,
+            "system_prompt_hash": null,
+            "registry_signature": null
+          }
+        },
+        "principal": {
+          "type": "organization",
+          "id": "did:web:acme.com",
+          "delegation_chain": [
+            {
+              "from": "did:web:acme.com",
+              "to": "did:web:acme.com:agents:bot",
+              "scope": "default",
+              "boundary_monotonicity": true,
+              "boundaries": {
+                "allowed_actions": [
+                  "read"
+                ],
+                "denied_actions": [],
+                "monetary_limit": {
+                  "per_transaction": 0.0,
+                  "per_day": 0.0,
+                  "currency": "USD"
+                },
+                "asset_classes": [],
+                "geo_restriction": null,
+                "time_window": null
+              },
+              "granted_at": "2026-09-24T12:00:00Z",
+              "expires_at": null
+            }
+          ]
+        },
+        "intent": {
+          "action": "read",
+          "target": "x",
+          "parameters": {
+            "amount": 500.0
+          }
+        },
+        "boundaries": {
+          "allowed_actions": [
+            "read"
+          ],
+          "denied_actions": [],
+          "monetary_limit": {
+            "per_transaction": 0.0,
+            "per_day": 0.0,
+            "currency": "USD"
+          },
+          "asset_classes": [],
+          "geo_restriction": null,
+          "time_window": null
+        },
+        "verification_tier": "tier_0",
+        "entropy": "nonce:00000000000000000000000000000000",
+        "ttl": 300,
+        "issued_at": "2026-09-25T12:00:00Z",
+        "expires_at": "2026-09-25T12:05:00Z",
+        "proof": {
+          "type": "Ed25519Signature2020",
+          "created": "2026-09-25T12:00:00Z",
+          "verification_method": "did:web:acme.com#keys-1",
+          "proof_purpose": "assertionMethod",
+          "proof_value": "1kA5yMzi_h4sEgvj0a7uP6lzzMps5jgFeJbLHpL0z9ZoCEg_6PSyNbmrOkxNAnFdjvc9EiV2MGyp0o3b3MNgDQ=="
+        }
+      },
+      "exclude": [
+        "proof"
+      ],
+      "canonical_payload_hex": "7b2240636f6e74657874223a2268747470733a2f2f637573746f732e70726f746f636f6c2f7631222c224074797065223a22437573746f73456e76656c6f7065222c226167656e74223a7b226174746573746174696f6e223a7b226275696c645f68617368223a6e756c6c2c226672616d65776f726b5f6964223a6e756c6c2c226d6574686f64223a2273656c665f7265706f72746564222c2272656769737472795f7369676e6174757265223a6e756c6c2c2273797374656d5f70726f6d70745f68617368223a6e756c6c7d2c226964223a226469643a7765623a61636d652e636f6d3a6167656e74733a626f74222c2272756e74696d65223a22637573746f732d73646b2f312e302e30222c2276657273696f6e223a22312e302e30227d2c22626f756e646172696573223a7b22616c6c6f7765645f616374696f6e73223a5b2272656164225d2c2261737365745f636c6173736573223a5b5d2c2264656e6965645f616374696f6e73223a5b5d2c2267656f5f7265737472696374696f6e223a6e756c6c2c226d6f6e65746172795f6c696d6974223a7b2263757272656e6379223a22555344222c227065725f646179223a302c227065725f7472616e73616374696f6e223a307d2c2274696d655f77696e646f77223a6e756c6c7d2c22656e74726f7079223a226e6f6e63653a3030303030303030303030303030303030303030303030303030303030303030222c22657870697265735f6174223a22323032362d30392d32355431323a30353a30305a222c22696e74656e74223a7b22616374696f6e223a2272656164222c22706172616d6574657273223a7b22616d6f756e74223a3530307d2c22746172676574223a2278227d2c226973737565645f6174223a22323032362d30392d32355431323a30303a30305a222c227072696e636970616c223a7b2264656c65676174696f6e5f636861696e223a5b7b22626f756e646172696573223a7b22616c6c6f7765645f616374696f6e73223a5b2272656164225d2c2261737365745f636c6173736573223a5b5d2c2264656e6965645f616374696f6e73223a5b5d2c2267656f5f7265737472696374696f6e223a6e756c6c2c226d6f6e65746172795f6c696d6974223a7b2263757272656e6379223a22555344222c227065725f646179223a302c227065725f7472616e73616374696f6e223a307d2c2274696d655f77696e646f77223a6e756c6c7d2c22626f756e646172795f6d6f6e6f746f6e6963697479223a747275652c22657870697265735f6174223a6e756c6c2c2266726f6d223a226469643a7765623a61636d652e636f6d222c226772616e7465645f6174223a22323032362d30392d32345431323a30303a30305a222c2273636f7065223a2264656661756c74222c22746f223a226469643a7765623a61636d652e636f6d3a6167656e74733a626f74227d5d2c226964223a226469643a7765623a61636d652e636f6d222c2274797065223a226f7267616e697a6174696f6e227d2c2270726f746f636f6c5f76657273696f6e223a22312e302e30222c2274746c223a3330302c22766572696669636174696f6e5f74696572223a22746965725f30227d"
+    },
+    {
+      "id": "K02",
+      "category": "serialization",
+      "description": "A whole float (500.0) normalizes to the JSON integer 500; a fractional float (45.5) is untouched.",
+      "payload_input": {
+        "whole": 500.0,
+        "fractional": 45.5
+      },
+      "exclude": [],
+      "canonical_payload_hex": "7b226672616374696f6e616c223a34352e352c2277686f6c65223a3530307d"
+    },
+    {
+      "id": "K03",
+      "category": "serialization",
+      "description": "A Decimal is carried through Pydantic as a JSON string, preserving exactness.",
+      "payload_input": {
+        "amount": "50000.00"
+      },
+      "exclude": [],
+      "canonical_payload_hex": "7b22616d6f756e74223a2235303030302e3030227d"
+    },
+    {
+      "id": "K04",
+      "category": "serialization",
+      "description": "Keys sort recursively and lexicographically; '@' (U+0040) sorts before all letters.",
+      "payload_input": {
+        "zebra": 1,
+        "@context": "x",
+        "alpha": {
+          "z": 1,
+          "a": 2
+        }
+      },
+      "exclude": [],
+      "canonical_payload_hex": "7b2240636f6e74657874223a2278222c22616c706861223a7b2261223a322c227a223a317d2c227a65627261223a317d"
+    },
+    {
+      "id": "K05",
+      "category": "serialization",
+      "description": "null is emitted for a None field, never omitted.",
+      "payload_input": {
+        "optional": null,
+        "present": 1
+      },
+      "exclude": [],
+      "canonical_payload_hex": "7b226f7074696f6e616c223a6e756c6c2c2270726573656e74223a317d"
+    }
+  ]
+}
