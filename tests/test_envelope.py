@@ -107,6 +107,17 @@ def test_tampering_after_signing_breaks_verification():
     assert verify_signature(holder.public_key, payload, signed.proof.proof_value) is False
 
 
+def test_sign_envelope_accepts_a_deterministic_now():
+    """proof.created is excluded from the signed payload, so this can't affect
+    signature validity — it exists so deterministic fixtures (tests,
+    conformance vectors) don't pick up the real wall clock."""
+    holder = passport()
+    fixed = datetime(2026, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+    signed = sign_envelope(create_envelope(holder, Action.TRADE, "asset", {"amount": 1}),
+                           holder.private_key, now=fixed)
+    assert signed.proof.created == fixed
+
+
 def test_verification_method_defaults_to_principal_keys_1():
     holder = passport()
     signed = sign_envelope(create_envelope(holder, Action.TRADE, "asset", {"amount": 1}),

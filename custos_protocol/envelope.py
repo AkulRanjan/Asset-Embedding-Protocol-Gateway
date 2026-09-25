@@ -90,11 +90,20 @@ def sign_envelope(
     envelope: CustosEnvelope,
     private_key: Ed25519PrivateKey,
     verification_method: str = "",
+    *,
+    now: datetime | None = None,
 ) -> CustosEnvelope:
-    """Returns a signed copy. The input envelope is never mutated."""
+    """Returns a signed copy. The input envelope is never mutated.
+
+    `proof.created` is excluded from the signed payload (you cannot sign your
+    own signature), so `now=` has no effect on the signature itself — it exists
+    so a caller building deterministic fixtures (tests, conformance vectors)
+    doesn't have the real wall clock leak into an otherwise-reproducible
+    envelope dump, matching `create_envelope`'s own `now=` parameter.
+    """
     payload = get_signable_payload(envelope, exclude={"proof"})
     proof = Proof(
-        created=datetime.now(timezone.utc).replace(microsecond=0),
+        created=(now or datetime.now(timezone.utc)).replace(microsecond=0),
         verification_method=verification_method or f"{envelope.principal.id}#keys-1",
         proof_value=sign_data(private_key, payload),
     )
