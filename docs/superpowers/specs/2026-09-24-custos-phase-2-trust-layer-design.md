@@ -1,6 +1,12 @@
 # Custos Phase 2 — trust layer design
 
-**Status:** approved in chat 2026-09-24; implemented same session.
+**Status:** approved in chat 2026-09-24; implemented same session. **2026-09-25 addendum:**
+the per-day ledger's `day_total()`-then-`record_amount()` pattern had a TOCTOU race under
+concurrent requests for the same agent (documented, not fixed, in the first pass). Closed by
+replacing it with `TrustEngine.reserve_amount()`/`release_amount()` — an atomic check-and-reserve
+under one lock acquisition, released by `verification.py`'s `fail_authenticated` on any failure
+after the reservation, so budget is never lost on success or permanently consumed by a request
+that never executes. See §5 and §7, updated below.
 **Builds on:** `docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md` §10, §11,
 §13, §15, and `docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md` (Phase 1, committed).
 
