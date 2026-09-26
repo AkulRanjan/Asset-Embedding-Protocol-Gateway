@@ -106,7 +106,7 @@ first differing offset with 20 bytes of surrounding context on both sides.
    padding retained) — pin against `vectors.json`'s `_meta.keys` public keys
    and the `signature` category.
 3. Implement the ordered `verify_intent` pipeline from
-   `docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md` §10 —
+   `docs/design/specs/2026-08-21-custos-aip-architecture-design.md` §10 —
    the step order is API surface, not an implementation detail. Signature
    precedes replay deliberately (an unauthenticated caller must not be able to
    burn a nonce); boundaries accumulate every violation rather than

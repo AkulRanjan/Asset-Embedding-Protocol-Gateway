@@ -1,71 +1,147 @@
-# Custos Gateway
+# Custos
 
-Custos prevents an autonomous agent from transacting against a tokenized Treasury claim until the claim is cross-checked against a current U.S. Treasury yield curve observation. It is a plausibility check against market rates, not an audit of a fund's private NAV or holdings.
+[![tests](https://github.com/AkulRanjan/APay-Gateway/actions/workflows/tests.yml/badge.svg)](https://github.com/AkulRanjan/APay-Gateway/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](pyproject.toml)
 
-The protocol lives in `custos_protocol/` — a standalone SDK with no dependency on the gateway, and none on the AIP SDK that inspired its architecture. `gateway/` is a thin HTTP adapter over it.
+**Custos is a pre-transaction asset-truth gateway for autonomous agents
+holding tokenized U.S. Treasury claims.** Before an agent borrows against,
+trades, or redeems a position, it sends a signed intent envelope to Custos.
+Custos cross-checks the asset's asserted claim against a live observation of
+the Treasury par yield curve and returns either a cryptographically signed
+`ALLOW` attestation or a signed `BLOCK` denial carrying a machine-readable
+`CUSTOS-Exxx` code.
 
-## Run
+It is **not** an audit of a fund's private books — issuer NAV feeds aren't
+public. It checks whether a claimed yield is plausible against the live
+market for its tenor, right before money moves.
 
-```powershell
-python -m pip install -r requirements.txt
-$env:CUSTOS_ADMIN_API_KEY = "replace-with-a-long-random-secret"
-$env:CUSTOS_PRIVATE_KEY = "C:\path\to\custos-gateway-ed25519.pem"
+```
+Agent → signs an intent envelope → Custos verifies it →
+  ALLOW (signed attestation)  or  BLOCK (signed denial + CUSTOS-Exxx)
+```
+
+## Why
+
+API keys and OAuth authenticate the *caller*. None of them answer "is this
+specific action, with these specific parameters, plausible against the
+current market" — and none of them can do it *before* the action fires.
+Custos's boundary cage travels inside the signed envelope itself, so
+verification is a local, deterministic check: no policy database lookup, no
+trusting the caller's word for what it's allowed to do.
+
+## What's in the box
+
+- **A 30-code error taxonomy** — every rejection is a machine-readable
+  `CUSTOS-Exxx`, not a string to `grep` for.
+- **A verification pipeline** — signature, replay, boundaries (action /
+  monetary / per-day / time / geo / asset-class), revocation, asset truth
+  (staleness / drift / backing ratio), delegation (with real boundary
+  monotonicity — a delegated hop can never widen its own authority), and a
+  behavioral trust score gate. Ordered, tier-gated, and every step is
+  covered by both a unit test and a conformance vector.
+- **A behavioral trust layer** — a pinned scoring formula and a rolling
+  per-day monetary ledger, implemented as an atomic reservation so
+  concurrent requests can't race past a limit.
+- **Three ways to use it**: a FastAPI gateway over HTTP, an embedded
+  `shield`/`observe` decorator library for single-process enforcement or
+  observability, or an offline CLI (`custos`) for scripting and CI.
+- **A conformance suite** — 50 vectors, fixed keys and clock, covering
+  every reachable error code and the canonical serialization form byte for
+  byte, so a second-language implementation can check itself without
+  reading a line of this repo's Python.
+
+Full details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Quickstart
+
+```bash
+python -m pip install -e .
+```
+
+### Run the gateway
+
+```bash
+export CUSTOS_ADMIN_API_KEY="replace-with-a-long-random-secret"
 python -m uvicorn gateway.server:app --reload
 ```
 
-Open `http://127.0.0.1:8000/docs` for the API. The oracle reads Treasury's official daily par yield curve from the OData/Atom endpoint, requesting the current calendar year and falling back to the previous one on the first business days of January, when the new year's feed is still empty. It keeps a 60-second in-process cache and allows 15 seconds per fetch — the feed answers in 8–10 seconds cold, so a shorter budget never completes. When the source cannot be reached it returns `CUSTOS-E500` rather than allowing an unverifiable transaction.
+Open `http://127.0.0.1:8000/docs` for the interactive API, then:
 
-For the interactive browser demo, open `http://127.0.0.1:8000/demo`. It shows the live Treasury observation and lets you inspect any seeded asset read-only via `GET /v1/assets/{id}`. It does **not** submit intents: every envelope must now carry an Ed25519 signature, and a web page cannot hold a signing key safely. The signed flow lives in the scripts below.
-
-## Submit an intent
-
-Every envelope is signed, so an agent registers its public key once, then signs each envelope:
-
-```powershell
+```bash
 python demo/run_local_demo.py    # in-process, deterministic, no server needed
-python demo/run_demo.py          # against a running gateway on :8000
 ```
 
-`run_local_demo.py` prints four outcomes — `CUSTOS-E300` stale, `CUSTOS-E301` drifted, `CUSTOS-E302` under-backed, `ALLOW` healthy — and verifies the returned attestation with a verifier that imports nothing from Custos.
+### Or embed it directly
 
-```powershell
-python demo/verify_attestation.py attestation.json --public-key <key from GET /v1/pubkey>
+```python
+from custos_protocol.passport import AgentPassport
+from custos_protocol.shield import protect
+from custos_protocol.models import Action
+
+passport = AgentPassport.create(
+    domain="acme.com", agent_name="treasury-bot",
+    allowed_actions=["borrow_against"], monetary_limit_per_txn=100_000.0,
+)
+
+@protect(action=Action.BORROW_AGAINST, passport=passport)
+def borrow_against(target: str, amount: float) -> str:
+    return f"borrowed {amount} against {target}"
 ```
 
-The key is passed **out of band on purpose**. Trusting the `public_key` field inside a record authenticates nothing.
+### Or use the CLI
 
-To demonstrate forwarding, start `python -m uvicorn demo.mock_lender:app --port 9000` and add `"downstream": "http://127.0.0.1:9000/loan"` to an intent's parameters. Custos forwards only an ALLOW and places a base64-encoded signed attestation in `X-Custos-Attestation`.
+```bash
+custos create-passport -d acme.com -n treasury-bot -a trade -o ./my-agent
+custos sign-intent -p ./my-agent -a trade -t TKN-UST-3M-001 --amount 50000 -o envelope.json
+custos verify -e envelope.json -k ./my-agent/public.pem   # exits 0/1 — CI-friendly
+```
 
-## API
+**Full usage guide, every configuration variable, and the admin CLI:
+[`docs/USAGE.md`](docs/USAGE.md).**
 
-| Route | Purpose |
+## Development
+
+```bash
+git clone https://github.com/AkulRanjan/APay-Gateway.git
+cd APay-Gateway
+python -m pip install -e ".[dev]"
+pytest -q                                  # 428+ tests, fully hermetic
+python conformance/run_conformance.py      # protocol-level conformance
+```
+
+The suite covers the canonical form byte-for-byte, Ed25519 and HMAC
+primitives, every scoring and delegation path, boundary enforcement, replay
+and revocation, the full verification pipeline at every tier, the HTTP
+surface, both CLIs, and the architectural dependency rules themselves — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR, and
+[`AGENTS.md`](AGENTS.md) for the implementation contract the codebase
+enforces by test, not by convention.
+
+## Documentation
+
+| Doc | Covers |
 |---|---|
-| `POST /v1/agents` | Register an agent's Ed25519 public key so its envelopes can be verified |
-| `POST /v1/intent` | Submit a signed `CustosEnvelope`; returns a signed `Attestation` or `Denial` |
-| `GET /v1/assets` | List the seeded claims |
-| `GET /v1/assets/{id}` | Claim, live observation, and asset-truth evaluation — read-only |
-| `GET /v1/pubkey` | The gateway's signing key, base64url and PEM |
-| `GET /v1/health` | Oracle reachability; `503` when degraded |
-| `POST /v1/demo/sync` | Realigns simulated claims to the live curve — **only when `CUSTOS_DEMO_MODE=1`** |
+| [`docs/USAGE.md`](docs/USAGE.md) | Every way to use Custos, with working examples for each |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | The system as it exists today: modules, pipeline, error taxonomy, gateway routes |
+| [`conformance/README.md`](conformance/README.md) | Porting Custos's verification pipeline to another language |
+| [`docs/design/`](docs/design/) | The dated design-decision record — why things work the way they do |
+| [`AGENTS.md`](AGENTS.md) | The implementation contract, enforced by test |
+| [`CHANGELOG.md`](CHANGELOG.md) | What shipped and when |
 
-An envelope from an agent with no registered key returns `CUSTOS-E100`: a signature that cannot be validated is an invalid signature, and it fails closed.
+## Contributing
 
-## Configuration
+Contributions are welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the
+rules this codebase enforces by test (dependency direction, the fixed error
+taxonomy, canonical-form stability) and the workflow that keeps a PR review
+short. This project follows the
+[Contributor Covenant](CODE_OF_CONDUCT.md).
 
-`CUSTOS_ADMIN_API_KEY` is required for state-changing control-plane routes. Keep it in a
-secret store in production and send it only as `X-Custos-Admin-Key`. It has no default:
-registration and demo sync fail closed until it is configured.
+## Security
 
-`CUSTOS_STALENESS_HOURS`, `CUSTOS_DRIFT_THRESHOLD`, `CUSTOS_BACKING_FLOOR`, `CUSTOS_MAX_OBS_AGE_DAYS`, `CUSTOS_ZERO_YIELD_TOLERANCE_BPS`, `CUSTOS_CLOCK_SKEW_SECONDS`, `CUSTOS_ORACLE_TIMEOUT`, `CUSTOS_DOWNSTREAM_TIMEOUT`, `CUSTOS_CACHE_TTL`, `CUSTOS_ATTESTATION_TTL`, `CUSTOS_PRIVATE_KEY` and `CUSTOS_DEMO_MODE` are supported. The private-key value is a path to an Ed25519 PEM; without it Custos generates an ephemeral demo key at startup.
+Found a vulnerability? Please don't open a public issue — see
+[`SECURITY.md`](SECURITY.md) for how to report it privately.
 
-`POST /v1/demo/sync` is unauthenticated state mutation, so it is absent from the app and from the OpenAPI schema unless `CUSTOS_DEMO_MODE=1`.
+## License
 
-The seeds use relative attestation ages, so a healthy claim does not become stale merely because the process has been running. Claims are intentionally simulated rather than written by the oracle; before a live demo, set the healthy seed's `claimed_yield_bps` to the current 3M observation (and the drifted seed at least 2% away), or run the gateway in demo mode and call `/v1/demo/sync`.
-
-## Verify
-
-```powershell
-pytest -q
-```
-
-The suite covers the canonical form byte-for-byte, Ed25519 and HMAC primitives, every scoring path, boundary enforcement, replay and revocation, the full verification pipeline, the HTTP surface, and the architectural dependency rules themselves.
+[MIT](LICENSE) — © 2026 Akul Ranjan.
