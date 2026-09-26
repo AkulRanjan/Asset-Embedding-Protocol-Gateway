@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 # This must not be pointed back at .../sites/default/files/interest-rates/yield.xml.
 # That document is reachable and healthy but serves the legacy QR_BC_CM report, which
 # contains zero <entry> elements and dates in DD-MON-YY form. parse_yield_curve finds
-# nothing in it and every request fails closed. See ARCHITECTURE.md section 18.
+# nothing in it and every request fails closed instead of silently misreading a date.
 TREASURY_XML_BASE = (
     "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
 )
