@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python 3.10.11, Pydantic 2.12.5, FastAPI 0.128.0, cryptography 46.0.4, httpx 0.28.1, pytest 8.x
 
-**Spec:** `docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md`
+**Spec:** `docs/design/specs/2026-08-21-custos-aip-architecture-design.md`
 
 ## Global Constraints
 
