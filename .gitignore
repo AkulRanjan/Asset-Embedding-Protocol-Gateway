@@ -2,5 +2,24 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+venv/
 attestation.json
 demo/attestation.json
+
+# packaging / tooling
+*.egg-info/
+dist/
+build/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# editors
+.vscode/
+.idea/
+*.swp
+
+# local secrets — never commit a private key
+*.pem
+.env
