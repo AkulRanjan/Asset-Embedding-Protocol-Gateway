@@ -1,7 +1,7 @@
 # Custos Phase 3 — DX surfaces design
 
 **Status:** approved in chat 2026-09-25; implemented same session.
-**Builds on:** `docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md` §4.1, §19
+**Builds on:** `docs/design/specs/2026-08-21-custos-aip-architecture-design.md` §4.1, §19
 (Phase 3), and `ARCHITECTURE1.md` §18–21 (the AIP blueprint's actual Shield/Observe/CLI/
 Conformance implementations, read in full to catalogue their documented bugs before designing
 around them).
