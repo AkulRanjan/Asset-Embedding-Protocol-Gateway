@@ -9,9 +9,9 @@ private key can bypass this wrapper entirely — a property of single-process
 enforcement, not a defect here.
 
 Custos's `Action` enum is closed (borrow_against / trade / redeem / read), unlike
-the reference implementation this module is modeled on (see ARCHITECTURE1.md
-§18), where "action" is any function name. So `action=` is always explicit here
-rather than defaulted from `func.__name__` — there is usually no sensible mapping
+the reference implementation this module is modeled on, where "action" is any
+function name. So `action=` is always explicit here rather than defaulted
+from `func.__name__` — there is usually no sensible mapping
 from an arbitrary Python name to one of the four domain actions, and guessing
 wrong would either silently deny every call (that blueprint's own Trap 1) or
 silently pick the wrong one.
@@ -206,8 +206,8 @@ def shield(
     Only methods named as keys in `actions` are wrapped; every other method on
     the class is left exactly as defined — no verification, no change in
     behavior. This matches a documented trade-off in the reference
-    implementation Custos is modeled on (ARCHITECTURE1.md §18.3, Trap 2): if you
-    need every method gated, name every method.
+    implementation Custos is modeled on: if you need every method gated, name
+    every method.
     """
     def decorator(cls: type) -> type:
         for method_name, action in actions.items():
