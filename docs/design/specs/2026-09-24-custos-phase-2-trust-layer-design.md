@@ -7,8 +7,8 @@ replacing it with `TrustEngine.reserve_amount()`/`release_amount()` — an atomi
 under one lock acquisition, released by `verification.py`'s `fail_authenticated` on any failure
 after the reservation, so budget is never lost on success or permanently consumed by a request
 that never executes. See §5 and §7, updated below.
-**Builds on:** `docs/superpowers/specs/2026-08-21-custos-aip-architecture-design.md` §10, §11,
-§13, §15, and `docs/superpowers/plans/2026-08-21-custos-aip-phase-1.md` (Phase 1, committed).
+**Builds on:** `docs/design/specs/2026-08-21-custos-aip-architecture-design.md` §10, §11,
+§13, §15, and `docs/design/plans/2026-08-21-custos-aip-phase-1.md` (Phase 1, committed).
 
 ## 1. Goal
 
