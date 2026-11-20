@@ -1,4 +1,4 @@
-"""Reference downstream consumer. Implements all five checks a real one must do."""
+"""Reference downstream consumer. Implements all six checks a real one must do."""
 
 from __future__ import annotations
 
@@ -40,8 +40,14 @@ async def loan(request: Request, x_custos_attestation: str | None = Header(defau
     if record.get("verdict") != "ALLOW":
         return {"accepted": False, "reason": "attestation is not an ALLOW"}
 
-    # 5. Does it describe THIS request?
+    # 5. Was the asset actually checked? A Tier 0 ALLOW is authorization only, no market check.
+    if record.get("tier_used") not in ("tier_1", "tier_2"):
+        return {"accepted": False, "reason": "attestation did not run the asset-truth check"}
+
+    # 6. Does it describe THIS request?
     envelope = await request.json()
+    if record["action"] != "borrow_against":
+        return {"accepted": False, "reason": "attestation is for a different action"}
     if record["asset_id"] != envelope["intent"]["target"]:
         return {"accepted": False, "reason": "attestation is for a different asset"}
     if record["amount"] != envelope["intent"]["parameters"].get("amount"):
