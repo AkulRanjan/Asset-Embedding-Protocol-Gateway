@@ -49,6 +49,9 @@ concurrent requests for the same agent must never both pass a stale `day_total` 
 exceed the limit. `boundaries.py` stays a pure function — it receives `day_total` as a
 parameter, never imports `trust.py` itself.
 
+The signer chooses `verification_tier`; `min_tier` lets a verifier raise it, never lower it.
+The gateway passes Tier 1 for value-moving actions, so money never moves on a Tier 0 check.
+
 Asset truth short-circuits in this order: E303 unknown asset, E500 no observation,
 E501 observation too old, E305 future-dated claim, E300 stale claim, E501 negative yield,
 E301 drift, E302 backing.

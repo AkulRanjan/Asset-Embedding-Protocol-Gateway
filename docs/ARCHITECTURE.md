@@ -121,6 +121,11 @@ every layer. Step order is API surface, not an implementation detail:
 | 11 | Trust score gate | T2 | `E404` |
 | — | **Tier 2 exits here** | | |
 
+The signer picks `verification_tier` itself, so `verify_intent` takes a
+`min_tier` floor that can raise the tier but never lower it. The gateway sets
+it to Tier 1 for every value-moving action, so an agent can't skip asset truth
+by declaring `tier_0`.
+
 Signature is checked **before** replay — an unauthenticated caller must not
 be able to burn a victim's nonce with a forged envelope carrying its nonce.
 Trust bookkeeping (`record_intent`, `record_violation`, ...) only starts
