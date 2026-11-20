@@ -12,6 +12,7 @@ from custos_protocol.models import Action, Observation, VerificationTier
 from custos_protocol.passport import AgentPassport
 from custos_protocol.revocation import SubjectType
 from gateway import server
+from oracle.treasury import UnsupportedTenor
 
 
 class FixedOracle:
@@ -24,6 +25,11 @@ class FixedOracle:
 class DeadOracle:
     async def get_observation(self, tenor: str) -> None:
         return None
+
+
+class NoTenorOracle:
+    async def get_observation(self, tenor: str) -> None:
+        raise UnsupportedTenor(tenor)
 
 
 @pytest.fixture
@@ -119,10 +125,34 @@ def test_under_backed_claim_is_blocked(client, agent):
     assert "CUSTOS-E302" in response.json()["errors"]
 
 
+def test_a_value_moving_intent_cannot_skip_asset_truth_by_declaring_tier_0(client, agent):
+    response = client.post("/v1/intent", json=envelope_json(
+        agent, asset="TKN-UST-6M-004", tier=VerificationTier.TIER_0))
+    assert response.status_code == 403
+    assert response.json()["errors"] == ["CUSTOS-E302"]
+
+
 def test_unknown_asset_is_404_and_precedes_the_oracle(client, agent):
     response = client.post("/v1/intent", json=envelope_json(agent, asset="NOPE"))
     assert response.status_code == 404
     assert "CUSTOS-E303" in response.json()["errors"]
+
+
+def test_an_unmapped_tenor_is_a_signed_422(client, agent, monkeypatch):
+    monkeypatch.setattr(server, "oracle", NoTenorOracle())
+    response = client.post("/v1/intent", json=envelope_json(agent))
+    assert response.status_code == 422
+    assert response.json()["errors"] == ["CUSTOS-E304"]
+
+
+def test_a_forged_envelope_fails_on_its_signature_before_the_tenor_check(client, agent, monkeypatch):
+    """Signature precedes everything after schema: an unauthenticated caller gets E100, not E304."""
+    monkeypatch.setattr(server, "oracle", NoTenorOracle())
+    payload = envelope_json(agent)
+    payload["intent"]["parameters"]["amount"] = 1
+    response = client.post("/v1/intent", json=payload)
+    assert response.status_code == 401
+    assert response.json()["errors"] == ["CUSTOS-E100"]
 
 
 def test_replayed_envelope_is_409(client, agent):
@@ -289,3 +319,57 @@ def test_the_configured_oracle_timeout_clears_the_measured_feed_latency(monkeypa
         assert reloaded.ORACLE_TIMEOUT_SECONDS >= 12.0
     finally:
         importlib.reload(config_module)
+
+
+# ---- downstream forwarding: the URL is agent-supplied, so it must be allowlisted ----
+
+
+class RecordingForward:
+    def __init__(self) -> None:
+        self.urls: list[str] = []
+
+    async def __call__(self, url, envelope, attestation) -> dict:
+        self.urls.append(url)
+        return {"status_code": 200, "body": {"accepted": True}}
+
+
+def downstream_json(passport, url):
+    envelope = create_envelope(passport, Action.BORROW_AGAINST, "TKN-UST-3M-001",
+                               {"amount": 50000, "currency": "USD", "downstream": url})
+    return sign_envelope(envelope, passport.private_key).model_dump(mode="json", by_alias=True)
+
+
+@pytest.fixture
+def forwarded(monkeypatch):
+    recorder = RecordingForward()
+    monkeypatch.setattr(server, "forward", recorder)
+    monkeypatch.setattr(server.config, "DOWNSTREAM_ALLOWLIST", ("http://127.0.0.1:9000",))
+    return recorder
+
+
+def test_an_allowlisted_downstream_is_forwarded(client, agent, forwarded):
+    response = client.post("/v1/intent", json=downstream_json(agent, "http://127.0.0.1:9000/loan"))
+    assert response.status_code == 200
+    assert forwarded.urls == ["http://127.0.0.1:9000/loan"]
+
+
+@pytest.mark.parametrize("url", [
+    "http://169.254.169.254/latest/meta-data/",   # not listed at all
+    "http://127.0.0.1:9001/loan",                  # listed host, other port
+    "https://127.0.0.1:9000/loan",                 # listed host, other scheme
+    "http://127.0.0.1:9000@evil.test/loan",        # userinfo trick that beats a prefix match
+])
+def test_a_downstream_off_the_allowlist_is_never_contacted(client, agent, forwarded, url):
+    response = client.post("/v1/intent", json=downstream_json(agent, url))
+    assert forwarded.urls == []
+    assert response.status_code == 502
+    body = response.json()
+    assert body["attestation"]["verdict"] == "ALLOW"
+    assert body["downstream"]["errors"] == ["CUSTOS-E502"]
+
+
+def test_forwarding_is_disabled_when_no_allowlist_is_configured(client, agent, forwarded, monkeypatch):
+    monkeypatch.setattr(server.config, "DOWNSTREAM_ALLOWLIST", ())
+    response = client.post("/v1/intent", json=downstream_json(agent, "http://127.0.0.1:9000/loan"))
+    assert forwarded.urls == []
+    assert response.status_code == 502

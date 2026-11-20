@@ -44,10 +44,12 @@ _MAX_IMPLEMENTED_TIER = VerificationTier.TIER_2
 _TIER_ORDER = {VerificationTier.TIER_0: 0, VerificationTier.TIER_1: 1, VerificationTier.TIER_2: 2}
 
 
-def _effective_tier(requested: VerificationTier) -> VerificationTier:
-    if _TIER_ORDER[requested] > _TIER_ORDER[_MAX_IMPLEMENTED_TIER]:
+def _effective_tier(requested: VerificationTier, min_tier: VerificationTier) -> VerificationTier:
+    # The signer picks its own tier, so the verifier's floor can only raise it, never lower it.
+    tier = max(requested, min_tier, key=_TIER_ORDER.__getitem__)
+    if _TIER_ORDER[tier] > _TIER_ORDER[_MAX_IMPLEMENTED_TIER]:
         return _MAX_IMPLEMENTED_TIER
-    return requested
+    return tier
 
 
 def _numeric(value: object) -> float | None:
@@ -74,13 +76,14 @@ def verify_intent(
     request_geo: str | None = None,
     clock_skew_seconds: int = 5,
     max_revocation_staleness_ms: int = 500,
+    min_tier: VerificationTier = VerificationTier.TIER_0,
     now: datetime | None = None,
 ) -> VerificationResult:
     now = now or datetime.now(timezone.utc)
     store = revocation_store if revocation_store is not None else RevocationStore()
     config = drift_config or DriftConfig()
     trust = trust_engine if trust_engine is not None else TrustEngine()
-    tier = _effective_tier(envelope.verification_tier)
+    tier = _effective_tier(envelope.verification_tier, min_tier)
 
     checks: dict[str, CheckOutcome] = {step: CheckOutcome.NOT_RUN for step in _STEPS}
 

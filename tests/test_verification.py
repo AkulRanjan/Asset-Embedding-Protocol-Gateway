@@ -206,6 +206,24 @@ def test_tier_0_skips_the_market_check_entirely():
     assert result.checks["asset_truth"] is CheckOutcome.NOT_RUN
 
 
+def test_min_tier_raises_a_declared_tier_0_envelope_into_the_market_check():
+    """The agent picks its own tier; a relying gateway must be able to refuse a
+    value-moving intent that declares Tier 0 to skip asset truth."""
+    envelope, passport = signed(tier=VerificationTier.TIER_0)
+    result = verify(envelope, passport, claim=claim(claimed_yield_bps=360),
+                    min_tier=VerificationTier.TIER_1)
+    assert result.passed is False
+    assert result.tier_used is VerificationTier.TIER_1
+    assert CustosErrorCode.YIELD_DRIFT_EXCEEDED in result.errors
+
+
+def test_min_tier_never_lowers_a_higher_declared_tier():
+    envelope, passport = signed(tier=VerificationTier.TIER_2)
+    result = verify(envelope, passport, min_tier=VerificationTier.TIER_1)
+    assert result.passed is True
+    assert result.tier_used is VerificationTier.TIER_2
+
+
 def test_tier_1_runs_the_market_check_and_can_fail_it():
     envelope, passport = signed()
     result = verify(envelope, passport, claim=claim(claimed_yield_bps=360))

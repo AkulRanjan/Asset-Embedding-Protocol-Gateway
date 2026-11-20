@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file. The format
 is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project uses [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Asset-truth bypass.** An agent could declare `tier_0` on a `borrow_against`,
+  `trade` or `redeem` intent and get a signed `ALLOW` with no asset check: an
+  under-backed or stale claim passed. `verify_intent` gains `min_tier` (it raises
+  the declared tier, never lowers it), and the gateway sets Tier 1 for every
+  value-moving action. `demo/mock_lender.py` now also rejects Tier 0
+  attestations and attestations for another action.
+- **Server-side request forgery via `downstream`.** The gateway POSTed to any
+  agent-supplied URL and returned the response. It now forwards only to origins
+  in the new `CUSTOS_DOWNSTREAM_ALLOWLIST` (exact scheme/host/port; unset means
+  off). Anything else returns `CUSTOS-E502` with the signed attestation.
+- **Signature before tenor lookup.** `POST /v1/intent` returned a signed `E304`
+  for an envelope whose signature it had not checked. The tenor error is now
+  reported only after `verify_intent` authenticates the envelope.
+- **Broken `custos-admin` in a wheel install.** The wheel shipped only
+  `custos_protocol`, but `custos-admin` lives in `gateway/`, which needs
+  `claims/` and `oracle/`. All four packages now ship.
+
 ## [1.0.0] — 2026-09-26
 
 The first complete release: protocol core, trust layer, and DX surfaces, all

@@ -35,7 +35,9 @@ submit intents — a browser can't hold a signing key safely).
 3. It sends it to `POST /v1/intent` before contacting a lender, DEX, or
    execution service.
 4. Custos validates the envelope, resolves the claim, fetches the market
-   observation, and evaluates staleness, drift, and backing.
+   observation, and evaluates staleness, drift, and backing. A value-moving
+   action (`borrow_against`, `trade`, `redeem`) always runs at least Tier 1,
+   even if the envelope declares `tier_0`; only `read` can skip the market check.
 5. On `ALLOW`, take the returned signed `Attestation` to the downstream
    system, or let Custos proxy it (see below).
 6. On `BLOCK`, stop. Branch on the `CUSTOS-Exxx` code in the signed
@@ -110,6 +112,16 @@ Add `"downstream": "http://127.0.0.1:9000/loan"` to an intent's parameters.
 Custos forwards only on `ALLOW`, and places a base64-encoded signed
 attestation in the `X-Custos-Attestation` header of the forwarded request.
 `demo/mock_lender.py` is a minimal receiver to try this against.
+
+The URL comes from the agent, so Custos only forwards to origins listed in
+`CUSTOS_DOWNSTREAM_ALLOWLIST` (exact scheme, host and port, e.g.
+`CUSTOS_DOWNSTREAM_ALLOWLIST=http://127.0.0.1:9000`). Forwarding is off
+when it is unset. A URL off the list returns `502` with `CUSTOS-E502` and the
+signed attestation, which the agent can deliver itself.
+
+A receiver must check `tier_used` is `tier_1` or `tier_2` — a Tier 0 `ALLOW`
+means no asset check ran — and that `action`, `asset_id` and `amount` match the
+request it is serving.
 
 ## 2. As an embedded library (`shield` / `observe`)
 
@@ -214,6 +226,7 @@ custos-admin trust did:web:acme.com:agents:treasury-bot   # no admin key needed
 | `CUSTOS_CLOCK_SKEW_SECONDS` | Envelope expiry grace window | `5` |
 | `CUSTOS_ORACLE_TIMEOUT` | Treasury feed fetch timeout | `15.0`s |
 | `CUSTOS_DOWNSTREAM_TIMEOUT` | Proxy forwarding timeout | `3.0`s |
+| `CUSTOS_DOWNSTREAM_ALLOWLIST` | Comma-separated origins `downstream` may forward to | unset (forwarding off) |
 | `CUSTOS_CACHE_TTL` | Oracle observation cache TTL | `60`s |
 | `CUSTOS_ATTESTATION_TTL` | Signed record validity window | `300`s |
 | `CUSTOS_DEMO_MODE` | Mounts `POST /v1/demo/sync` | unset (route absent) |
