@@ -10,6 +10,19 @@ from custos_protocol.models import CustosEnvelope
 from gateway import config
 
 
+def is_allowed(url: str, allowlist: tuple[str, ...]) -> bool:
+    """Exact (scheme, host, port) match. A prefix check would let
+    http://allowed:9000@evil.test through, since that host is evil.test."""
+    def origin(value: str) -> tuple:
+        parsed = httpx.URL(value)
+        return parsed.scheme, parsed.host, parsed.port
+
+    try:
+        return origin(url) in {origin(entry) for entry in allowlist}
+    except httpx.InvalidURL:
+        return False
+
+
 async def forward(url: str, envelope: CustosEnvelope, attestation: Attestation) -> dict:
     """Forward an allowed intent with its signed proof in a header-safe encoding."""
     serialized = json.dumps(attestation.model_dump(mode="json"), separators=(",", ":"), ensure_ascii=True)

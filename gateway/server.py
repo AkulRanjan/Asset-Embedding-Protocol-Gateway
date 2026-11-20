@@ -16,7 +16,7 @@ from pydantic import BaseModel, ValidationError
 from claims import ClaimRegistry
 from custos_protocol.attestation import RecordSigner
 from custos_protocol.crypto import load_private_key
-from custos_protocol.envelope import envelope_hash
+from custos_protocol.envelope import VALUE_MOVING_ACTIONS, envelope_hash
 from custos_protocol.errors import CustosErrorCode, http_status_for
 from custos_protocol.models import AgentHistory, CustosEnvelope, TrustScore, VerificationTier
 from custos_protocol.revocation import RevocationStore, SubjectType
@@ -26,7 +26,7 @@ from gateway import config
 from gateway.attestations import AttestationRegistry
 from gateway.auth import require_admin
 from gateway.keys import AgentAlreadyRegistered, AgentKeyRegistry
-from gateway.proxy import forward
+from gateway.proxy import forward, is_allowed
 from oracle.treasury import TreasuryOracle, UnsupportedTenor
 
 app = FastAPI(
@@ -229,15 +229,14 @@ async def post_intent(envelope: CustosEnvelope, request: Request):
                      [CustosErrorCode.INVALID_SIGNATURE],
                      f"No registered key for agent {envelope.agent.id}; signature cannot be verified.")
 
-    claim = observation = None
-    if envelope.verification_tier is not VerificationTier.TIER_0:
+    # Money never moves on Tier 0: the agent declares its own tier, so without this
+    # floor it could skip asset truth by signing tier_0.
+    min_tier = (VerificationTier.TIER_1 if envelope.intent.action in VALUE_MOVING_ACTIONS
+                else VerificationTier.TIER_0)
+    claim = observation = tenor_error = None
+    if (envelope.verification_tier is not VerificationTier.TIER_0
+            or min_tier is not VerificationTier.TIER_0):
         claim, observation, tenor_error = await _resolve(envelope)
-        if tenor_error is not None:
-            _log_decision(started=started, agent_id=envelope.agent.id, asset_id=envelope.intent.target,
-                          tier=tier, verdict="BLOCK", errors=[tenor_error])
-            return _deny(digest, envelope.agent.id, envelope.intent.target,
-                         [tenor_error],
-                         f"Tenor {claim.underlying_tenor} has no yield-curve mapping.")
 
     result = verify_intent(
         envelope, public_key,
@@ -249,7 +248,15 @@ async def post_intent(envelope: CustosEnvelope, request: Request):
         known_prompt_hashes=attestations.prompt_hashes,
         request_geo=request.headers.get("X-Custos-Geo"),
         clock_skew_seconds=drift_config.clock_skew_seconds,
+        min_tier=min_tier,
     )
+    # An unmapped tenor leaves no observation, so asset truth reports E500 — but only
+    # after signature, replay, boundaries and revocation have passed. Name the real cause.
+    if tenor_error is not None and result.errors == [CustosErrorCode.ORACLE_UNAVAILABLE]:
+        result = result.model_copy(update={
+            "errors": [tenor_error],
+            "detail": f"Tenor {claim.underlying_tenor} has no yield-curve mapping.",
+        })
     _log_decision(started=started, agent_id=envelope.agent.id, asset_id=envelope.intent.target,
                   tier=result.tier_used.value, verdict="ALLOW" if result.passed else "BLOCK",
                   errors=result.errors)
@@ -269,16 +276,22 @@ async def post_intent(envelope: CustosEnvelope, request: Request):
     if not downstream_url:
         return _render(attestation)
 
+    if not is_allowed(str(downstream_url), config.DOWNSTREAM_ALLOWLIST):
+        return _downstream_failure(attestation, "The downstream host is not on this gateway's allowlist.")
     try:
         downstream = await forward(str(downstream_url), envelope, attestation)
     except ConnectionError:
-        return _render(
-            {"attestation": jsonable_encoder(attestation),
-             "downstream": {"errors": [CustosErrorCode.DOWNSTREAM_UNREACHABLE.value],
-                            "detail": "The downstream service could not be reached."}},
-            http_status_for(CustosErrorCode.DOWNSTREAM_UNREACHABLE),
-        )
+        return _downstream_failure(attestation, "The downstream service could not be reached.")
     return _render({"attestation": attestation, "downstream": downstream})
+
+
+def _downstream_failure(attestation, detail: str) -> JSONResponse:
+    """The verdict stands; the agent keeps its attestation and can deliver it itself."""
+    return _render(
+        {"attestation": jsonable_encoder(attestation),
+         "downstream": {"errors": [CustosErrorCode.DOWNSTREAM_UNREACHABLE.value], "detail": detail}},
+        http_status_for(CustosErrorCode.DOWNSTREAM_UNREACHABLE),
+    )
 
 
 @app.get("/v1/assets")

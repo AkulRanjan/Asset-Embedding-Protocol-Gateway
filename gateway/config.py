@@ -27,7 +27,12 @@ def load_drift_config() -> DriftConfig:
 # means at most one request per tenor per minute pays this.
 ORACLE_TIMEOUT_SECONDS = float(_env("CUSTOS_ORACLE_TIMEOUT", "15.0"))
 DOWNSTREAM_TIMEOUT_SECONDS = float(_env("CUSTOS_DOWNSTREAM_TIMEOUT", "3.0"))
-ORACLE_CACHE_TTL_SECONDS = int(_env("CUSTOS_CACHE_TTL", "60"))
+# Origins (scheme://host[:port]) an allowed intent may be forwarded to. The URL comes
+# from the agent, so an open forward is a server-side request forgery; empty disables it.
+DOWNSTREAM_ALLOWLIST = tuple(
+    origin.strip() for origin in _env("CUSTOS_DOWNSTREAM_ALLOWLIST", "").split(",") if origin.strip()
+)
+ORACLE_CACHE_TTL_SECONDS =int(_env("CUSTOS_CACHE_TTL", "60"))
 ATTESTATION_TTL_SECONDS = int(_env("CUSTOS_ATTESTATION_TTL", "300"))
 PRIVATE_KEY_PATH = os.getenv("CUSTOS_PRIVATE_KEY")
 # Control-plane authentication is deliberately independent from envelope
